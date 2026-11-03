@@ -1,0 +1,2089 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>لومدة أمن المعلومات — אבטחת מידע י'–י"א</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Heebo:wght@400;700;800&display=swap" rel="stylesheet">
+  <!-- Leaflet (خريطة 2D) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+:root{
+  --bg:#0b1220; --bg2:#0f172a; --card:#131c31; --card2:#1a2540; --line:#26324d;
+  --text:#e8eefc; --muted:#94a3b8; --accent:#38bdf8; --green:#22c55e; --red:#ef4444;
+  --yellow:#facc15; --purple:#a78bfa; --orange:#f97316;
+  --radius:16px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:"Cairo","Heebo",system-ui,sans-serif; font-size:18px; line-height:1.7;
+  background:radial-gradient(circle at 20% 0%,#132347 0%,var(--bg) 55%) fixed; color:var(--text);
+  min-height:100vh;
+}
+.he{font-family:"Heebo","Cairo",sans-serif;direction:rtl;unicode-bidi:isolate}
+.ltr{direction:ltr;unicode-bidi:isolate;display:inline-block}
+code,.mono{font-family:"JetBrains Mono",Consolas,monospace;direction:ltr;unicode-bidi:isolate;background:#0a1020;padding:1px 6px;border-radius:6px;color:#7dd3fc;font-size:.92em}
+a{color:var(--accent)}
+button{font-family:inherit;font-size:17px;cursor:pointer;border:none;border-radius:12px;padding:10px 18px;font-weight:700;background:var(--accent);color:#04121f;transition:transform .12s,filter .12s}
+button:hover{filter:brightness(1.12)}
+button:active{transform:scale(.97)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.ghost{background:transparent;color:var(--text);border:2px solid var(--line)}
+button.green{background:var(--green);color:#03150a}
+button.red{background:var(--red);color:#fff}
+button.small{padding:6px 12px;font-size:15px}
+input,select{font-family:inherit;font-size:17px;padding:10px 14px;border-radius:12px;border:2px solid var(--line);background:#0a1020;color:var(--text);outline:none}
+input:focus,select:focus{border-color:var(--accent)}
+
+/* ---------- top bar ---------- */
+.topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:14px;padding:10px 20px;background:rgba(11,18,32,.88);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.brand{font-weight:900;font-size:20px;display:flex;align-items:center;gap:8px;cursor:pointer}
+.brand small{font-weight:400;color:var(--muted);font-size:14px}
+.topbar .sp{flex:1}
+.pill{background:var(--card2);border:1px solid var(--line);border-radius:999px;padding:4px 14px;font-size:15px;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.navlink{color:var(--muted);cursor:pointer;font-size:15px;white-space:nowrap}
+.navlink:hover{color:var(--text)}
+
+main{max-width:1100px;margin:0 auto;padding:24px 18px 80px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:22px}
+h1{font-size:34px;margin:.2em 0}
+h2{font-size:26px;margin:.2em 0 .5em}
+h3{font-size:21px;margin:.2em 0 .4em}
+.muted{color:var(--muted)}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:780px){.grid2{grid-template-columns:1fr}.topbar .hide-sm{display:none}}
+
+/* ---------- login ---------- */
+.login{max-width:560px;margin:6vh auto;text-align:center}
+.login .shield{font-size:90px;animation:float 3s ease-in-out infinite}
+.login input{width:100%;font-size:22px;text-align:center;margin:14px 0}
+.login .known{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:14px}
+@keyframes float{50%{transform:translateY(-10px)}}
+
+/* ---------- home map ---------- */
+.hero{display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin-bottom:22px}
+.hero .big{font-size:64px}
+.progressbar{height:14px;background:#0a1020;border-radius:999px;overflow:hidden;border:1px solid var(--line)}
+.progressbar>div{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));transition:width .8s}
+.path{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
+.stagecard{position:relative;background:var(--card);border:2px solid var(--line);border-radius:20px;padding:20px;cursor:pointer;transition:transform .15s,border-color .15s;overflow:hidden}
+.stagecard:hover{transform:translateY(-4px)}
+.stagecard .num{position:absolute;top:12px;left:16px;font-size:44px;font-weight:900;opacity:.12}
+.stagecard .ic{font-size:46px}
+.stagecard.locked{filter:grayscale(1);opacity:.55;cursor:not-allowed}
+.stagecard.locked:hover{transform:none}
+.stagecard.done{border-color:var(--green)}
+.stagecard .status{margin-top:10px;font-size:15px}
+.stagecard .mini{height:8px;background:#0a1020;border-radius:99px;overflow:hidden;margin-top:8px}
+.stagecard .mini>div{height:100%;background:var(--accent)}
+.badges{display:flex;gap:10px;flex-wrap:wrap}
+.badge{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:8px 12px;font-size:15px;display:flex;gap:6px;align-items:center}
+.badge.off{opacity:.35;filter:grayscale(1)}
+
+/* ---------- stage view ---------- */
+.stagehead{display:flex;gap:16px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+.stagehead .ic{font-size:56px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 18px}
+.tab{background:var(--card);border:2px solid var(--line);color:var(--text);border-radius:14px;padding:10px 16px;font-weight:700;display:flex;gap:8px;align-items:center}
+.tab.on{border-color:var(--accent);background:var(--card2)}
+.tab .ok{color:var(--green)}
+.tab.locked{opacity:.45}
+
+/* ---------- presentation ---------- */
+.deck{position:relative;background:linear-gradient(160deg,#16213b,#0e1629);border:1px solid var(--line);border-radius:22px;min-height:440px;padding:30px 34px 80px;overflow:hidden}
+.slide{animation:slideIn .6s ease both}
+@keyframes slideIn{from{opacity:0;transform:translateX(-40px)}to{opacity:1;transform:none}}
+.slide .sicon{font-size:72px;animation:pop .7s cubic-bezier(.3,1.6,.5,1) both}
+@keyframes pop{from{transform:scale(0) rotate(-20deg)}to{transform:scale(1)}}
+.slide h2{font-size:30px;animation:fadeUp .6s .15s both}
+.slide .stext{font-size:21px;animation:fadeUp .6s .3s both;max-width:760px}
+.slide .term{display:inline-flex;gap:14px;align-items:center;margin-top:18px;background:#0a1020;border:1px dashed var(--accent);border-radius:14px;padding:8px 16px;animation:fadeUp .6s .45s both;flex-wrap:wrap}
+.slide .term .he{font-size:24px;font-weight:800;color:var(--yellow)}
+.slide .term .en{direction:ltr;color:var(--muted)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.deck .controls{position:absolute;bottom:16px;right:20px;left:20px;display:flex;align-items:center;gap:10px}
+.deck .dots{flex:1;display:flex;gap:6px;justify-content:center}
+.deck .dot{width:12px;height:12px;border-radius:50%;background:var(--line);cursor:pointer}
+.deck .dot.on{background:var(--accent);width:30px;border-radius:8px}
+.deck .timer{position:absolute;top:0;right:0;height:4px;background:var(--accent)}
+.slidebody{display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap}
+.slidebody .txt{flex:1 1 380px}
+.slidebody .vis{flex:0 1 330px;min-height:200px;display:flex;align-items:center;justify-content:center}
+
+/* ---- slide visuals ---- */
+.v-cia{position:relative;width:300px;height:260px}
+.v-cia svg{width:100%;height:100%}
+.v-cia .lbl{position:absolute;font-weight:800;font-size:16px;padding:4px 10px;border-radius:10px;background:#0a1020;border:1px solid var(--line);animation:pop .6s both}
+.v-hash{display:flex;align-items:center;gap:10px;flex-direction:column}
+.v-hash .in{background:#0a1020;padding:8px 14px;border-radius:10px;animation:fadeUp .5s both}
+.v-hash .mach{font-size:56px;animation:shake .4s 3 .4s}
+.v-hash .out{font-family:monospace;color:var(--green);direction:ltr;font-size:13px;background:#0a1020;padding:8px;border-radius:10px;animation:fadeUp .5s 1.4s both;word-break:break-all;max-width:300px}
+@keyframes shake{25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
+.v-caesar{display:grid;grid-template-columns:repeat(7,34px);gap:6px;direction:ltr}
+.v-caesar div{height:34px;display:flex;align-items:center;justify-content:center;border-radius:8px;font-weight:800;font-family:monospace}
+.v-caesar .p{background:#1e293b}
+.v-caesar .c{background:#4c1d95;animation:pop .4s both}
+.v-ip{display:flex;gap:6px;direction:ltr;font-family:monospace;font-size:26px;font-weight:800}
+.v-ip span{background:#0a1020;border:2px solid var(--accent);border-radius:10px;padding:4px 10px;animation:pop .5s both}
+.v-ip i{align-self:flex-end;font-style:normal;color:var(--muted)}
+.v-packet{width:300px;border:2px solid var(--green);border-radius:14px;overflow:hidden;font-family:monospace;direction:ltr;font-size:14px}
+.v-packet div{padding:8px 12px;border-bottom:1px solid var(--line);animation:fadeUp .4s both}
+.v-packet .h{background:#052e16}
+.v-acl{width:310px;font-family:monospace;direction:ltr;font-size:13px}
+.v-acl div{padding:7px 10px;margin:5px 0;border-radius:8px;background:#0a1020;border-right:5px solid var(--green);animation:fadeUp .4s both}
+.v-acl .d{border-right-color:var(--red)}
+.v-acl .imp{opacity:.6;border-style:dashed}
+.v-osi{width:290px}
+.v-osi div{padding:9px 12px;margin:4px 0;border-radius:10px;font-weight:700;animation:slideIn .5s both}
+.v-flow{display:flex;align-items:center;gap:8px;font-size:44px;flex-wrap:wrap;justify-content:center}
+.v-flow .arrow{font-size:28px;color:var(--muted);animation:pulse 1.2s infinite}
+.v-flow .lab{font-size:14px;display:block;text-align:center;color:var(--muted)}
+@keyframes pulse{50%{opacity:.25}}
+.v-term{background:#000;color:#4ade80;font-family:monospace;direction:ltr;text-align:left;padding:14px;border-radius:10px;font-size:14px;width:310px}
+.v-term div{white-space:pre;overflow:hidden;animation:typing 1s steps(30) both}
+@keyframes typing{from{width:0}to{width:100%}}
+
+/* ---------- quiz ---------- */
+.quiz .qtitle{font-size:23px;font-weight:800;margin-bottom:14px}
+.options{display:grid;gap:10px}
+.opt{background:var(--card2);border:2px solid var(--line);color:var(--text);text-align:right;padding:14px 18px;font-weight:600;font-size:19px}
+.opt.right{border-color:var(--green);background:#052e16}
+.opt.wrong{border-color:var(--red);background:#3b0a0a}
+.feedback{margin-top:14px;padding:14px;border-radius:12px;animation:fadeUp .3s both}
+.feedback.good{background:#052e16;border:1px solid var(--green)}
+.feedback.bad{background:#3b0a0a;border:1px solid var(--red)}
+.qprog{display:flex;gap:6px;margin-bottom:14px}
+.qprog span{flex:1;height:8px;border-radius:99px;background:var(--line)}
+.qprog span.r{background:var(--green)}.qprog span.w{background:var(--red)}.qprog span.c{background:var(--accent)}
+.result{text-align:center;padding:30px}
+.result .score{font-size:70px;font-weight:900}
+
+/* ---------- activities ---------- */
+.actlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-bottom:18px}
+.actbtn{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:16px;cursor:pointer;color:var(--text);text-align:right}
+.actbtn.on{border-color:var(--accent)}
+.actbtn .t{font-weight:800;font-size:18px}
+.actbtn .ic{font-size:34px}
+.actbtn .done{color:var(--green);font-size:14px}
+
+.scenario{font-size:22px;background:var(--card2);border-radius:16px;padding:22px;margin:12px 0;border-right:6px solid var(--accent);animation:fadeUp .4s both}
+.cia-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.cia-btns button{padding:16px 8px;font-size:18px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.cia-btns button .he{font-size:22px}
+
+/* phone & mail mockups */
+.msgwrap{display:flex;justify-content:center;margin:12px 0}
+.phone{width:340px;background:#000;border-radius:34px;padding:14px;border:3px solid #333}
+.phone .screen{background:#111827;border-radius:24px;padding:16px;min-height:220px}
+.phone .from{font-weight:800;margin-bottom:8px;color:#cbd5e1}
+.bubble{background:#1f2937;padding:12px 14px;border-radius:16px 16px 16px 4px;font-size:17px}
+.chat .bubble{background:#064e3b}
+.mail{width:100%;max-width:560px;background:#f8fafc;color:#0f172a;border-radius:14px;overflow:hidden}
+.mail .mh{background:#e2e8f0;padding:10px 16px;font-size:15px}
+.mail .mh b{direction:ltr;unicode-bidi:isolate}
+.mail .mb{padding:16px}
+.clues{margin:6px 0 0;padding-right:20px}
+
+/* strength */
+.meter{height:18px;border-radius:99px;background:#0a1020;overflow:hidden;border:1px solid var(--line);margin:10px 0}
+.meter>div{height:100%;transition:width .3s,background .3s}
+.checks{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:16px}
+.checks .y{color:var(--green)}.checks .n{color:var(--muted)}
+
+/* caesar wheel */
+.wheel{position:relative;width:300px;height:300px;margin:auto}
+.wheel .ring{position:absolute;inset:0;border-radius:50%;transition:transform .5s}
+.wheel .ring span{position:absolute;left:50%;top:50%;width:24px;height:24px;margin:-12px;text-align:center;font-weight:800;font-family:monospace;font-size:15px}
+.wheel .outer{border:2px solid var(--line);background:#0e1629}
+.wheel .inner{inset:42px;border:2px solid var(--purple);background:#1e1538}
+.wheel .center{position:absolute;inset:110px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;color:var(--purple)}
+.wheel .pointer{position:absolute;left:50%;top:-6px;margin-left:-8px;width:0;height:0;border:8px solid transparent;border-top:14px solid var(--yellow)}
+.cipherout{font-family:monospace;font-size:26px;direction:ltr;letter-spacing:3px;background:#0a1020;padding:10px 16px;border-radius:12px;min-height:56px;color:var(--purple);word-break:break-all}
+
+/* pwned lab */
+.steps{display:grid;gap:12px}
+.step{background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:14px 16px;opacity:.35;transition:opacity .4s}
+.step.on{opacity:1;border-color:var(--accent)}
+.step .n{display:inline-flex;width:30px;height:30px;border-radius:50%;background:var(--accent);color:#000;font-weight:900;align-items:center;justify-content:center;margin-left:8px}
+.hashview{font-family:monospace;direction:ltr;font-size:17px;word-break:break-all;background:#0a1020;padding:10px;border-radius:10px;margin-top:8px}
+.hashview .pre{color:var(--yellow);background:#422006;border-radius:4px;padding:0 2px}
+.hashview .suf{color:#7dd3fc}
+.hashlist{font-family:monospace;direction:ltr;font-size:12px;max-height:170px;overflow:auto;background:#000;color:#9ca3af;padding:8px;border-radius:10px;margin-top:8px}
+.hashlist .hit{color:#000;background:var(--red);font-weight:900}
+.netlog{font-family:monospace;direction:ltr;font-size:13px;color:#86efac;background:#000;padding:8px 10px;border-radius:8px;margin-top:6px;word-break:break-all}
+
+/* ip / globe */
+#globe,#map2d{width:100%;height:420px;border-radius:16px;overflow:hidden;background:#000;border:1px solid var(--line)}
+.infogrid{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:16px}
+.infogrid b{color:var(--muted);font-weight:600}
+.octets{display:flex;gap:6px;direction:ltr;flex-wrap:wrap;margin-top:6px}
+.octets div{background:#0a1020;border:1px solid var(--line);border-radius:10px;padding:6px 8px;text-align:center;font-family:monospace}
+.octets div small{display:block;color:var(--muted);font-size:11px}
+.tagp{display:inline-block;padding:2px 10px;border-radius:99px;font-size:14px;font-weight:700}
+
+/* acl */
+#aclCanvas{width:100%;background:#0e1629;border:2px solid var(--line);border-radius:16px}
+.rules{display:grid;gap:8px}
+.rule{display:flex;gap:6px;align-items:center;background:var(--card2);border:2px solid var(--line);border-radius:12px;padding:8px;flex-wrap:wrap;transition:border-color .2s,background .2s}
+.rule select{font-size:15px;padding:6px 8px}
+.rule .num{font-weight:900;width:24px;text-align:center;color:var(--muted)}
+.rule.check{border-color:var(--yellow);background:#422006}
+.rule.match-p{border-color:var(--green);background:#052e16}
+.rule.match-d{border-color:var(--red);background:#3b0a0a}
+.rule.implicit{opacity:.75;border-style:dashed}
+.rule .cli{flex-basis:100%;font-family:monospace;direction:ltr;font-size:12.5px;color:var(--muted);text-align:left}
+.mission{background:#0a1020;border:2px solid var(--purple);border-radius:14px;padding:14px;margin-bottom:12px}
+.mission.ok{border-color:var(--green)}
+.testres{font-size:15px;margin-top:8px}
+.testres div{padding:3px 0}
+
+/* dns dissector */
+.layers{display:grid;gap:8px;margin-top:12px}
+.layer{border-radius:12px;overflow:hidden;border:1px solid var(--line);animation:slideIn .5s both}
+.layer .lh{padding:10px 14px;font-weight:800;cursor:pointer;display:flex;justify-content:space-between}
+.layer .lb{padding:10px 14px;background:#0a1020;font-family:monospace;direction:ltr;font-size:14px;text-align:left}
+.layer table{width:100%;border-collapse:collapse}
+.layer td,.layer th{padding:4px 8px;border-bottom:1px solid var(--line);text-align:left}
+.travel{display:flex;align-items:center;justify-content:space-between;background:#0a1020;border-radius:14px;padding:14px 20px;position:relative;margin-top:10px;font-size:34px;direction:ltr}
+.travel .lab{font-size:13px;display:block;text-align:center;color:var(--muted)}
+.travel .pk{position:absolute;top:50%;margin-top:-12px;width:24px;height:24px;border-radius:50%;background:var(--yellow);box-shadow:0 0 14px var(--yellow);left:70px;transition:left 1.2s ease-in-out}
+
+/* switch escape room */
+.switchbox{background:linear-gradient(#334155,#1e293b);border-radius:14px;padding:16px;border:2px solid #475569;direction:ltr}
+.switchbox .lbl{color:#cbd5e1;font-family:monospace;font-size:13px;margin-bottom:8px;display:flex;justify-content:space-between}
+.ports{display:grid;grid-template-columns:repeat(8,1fr);gap:8px}
+.port{background:#0b1220;border-radius:6px;height:56px;position:relative;border:2px solid #475569;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;color:#94a3b8;font-family:monospace;font-size:12px;padding-bottom:2px}
+.port .led{position:absolute;top:5px;width:10px;height:10px;border-radius:50%;background:#334155}
+.port.up .led{background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 1s infinite}
+.port.down .led{background:#f59e0b}
+.port.err .led{background:var(--red);box-shadow:0 0 10px var(--red)}
+.port .dev{position:absolute;top:-30px;font-size:22px}
+.port.focus{border-color:var(--yellow)}
+.terminal{background:#000;color:#4ade80;font-family:"JetBrains Mono",Consolas,monospace;direction:ltr;text-align:left;border-radius:12px;padding:12px;height:300px;overflow:auto;font-size:14.5px;border:1px solid #14532d}
+.terminal .l{white-space:pre-wrap}
+.terminal .err{color:#f87171}.terminal .sys{color:#fbbf24}.terminal .cmd{color:#e5e7eb}
+.terminal .inrow{display:flex;gap:6px}
+.terminal input{flex:1;background:transparent;border:none;color:#fff;font-family:inherit;font-size:14.5px;padding:0;direction:ltr}
+.escape-top{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.clock{font-family:monospace;font-size:22px;background:#000;color:var(--red);padding:2px 12px;border-radius:8px;direction:ltr}
+
+/* final */
+.dropzone{min-height:60px;border:2px dashed var(--line);border-radius:12px;padding:8px;display:grid;gap:6px}
+.dropzone.over{border-color:var(--accent);background:#0c2033}
+.dcard{background:var(--card2);border:2px solid var(--line);border-radius:10px;padding:8px 12px;font-family:monospace;direction:ltr;text-align:left;cursor:grab;font-size:15px;user-select:none}
+.dcard.sel{border-color:var(--yellow)}
+.matchgrid{display:grid;grid-template-columns:1fr 1.6fr;gap:10px}
+.mterm,.mdef{background:var(--card2);border:2px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer}
+.mterm.sel{border-color:var(--yellow)}
+.mterm.ok,.mdef.ok{border-color:var(--green);background:#052e16;cursor:default}
+.mdef.bad{animation:shake .3s}
+.cert{background:linear-gradient(135deg,#fef9c3,#fde68a);color:#422006;border-radius:18px;padding:40px;text-align:center;border:10px double #b45309;max-width:760px;margin:auto}
+.cert h1{color:#78350f;font-size:40px}
+.cert .nm{font-size:42px;font-weight:900;border-bottom:3px solid #b45309;display:inline-block;padding:0 30px;margin:10px 0}
+
+/* misc */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--card2);border:2px solid var(--green);padding:12px 22px;border-radius:14px;z-index:999;font-weight:700;animation:fadeUp .3s both}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:998}
+table.t{width:100%;border-collapse:collapse;font-size:16px}
+table.t th,table.t td{padding:8px;border-bottom:1px solid var(--line);text-align:right}
+.hint{background:#1e1538;border:1px solid var(--purple);border-radius:12px;padding:10px 14px;font-size:16px;margin-top:10px}
+.speak{background:transparent;border:2px solid var(--line);color:var(--text);padding:6px 10px}
+@media print{.topbar,.noprint{display:none!important}body{background:#fff}}
+
+/* ---------- mobile ---------- */
+body{overflow-x:hidden}
+@media(max-width:640px){
+  body{font-size:16px}
+  .topbar{flex-wrap:wrap;gap:8px;padding:8px 12px}
+  .topbar .sp{display:none}
+  .brand{font-size:17px;width:100%}
+  .pill{padding:2px 10px;font-size:13px}
+  h1{font-size:26px}
+  .deck{padding:20px 16px 20px;min-height:0}
+  .deck .controls{position:static;flex-wrap:wrap;margin-top:18px;justify-content:center}
+  .deck .dots{order:-1;flex-basis:100%;margin-bottom:6px}
+  .slide h2{font-size:24px}.slide .stext{font-size:18px}
+  .cia-btns{grid-template-columns:1fr}
+  .checks{grid-template-columns:1fr}
+  .matchgrid{grid-template-columns:1fr 1fr}
+  .ports{grid-template-columns:repeat(4,1fr);row-gap:38px}
+  .switchbox{margin-top:40px}
+  .phone{width:100%}
+  .wheel{transform:scale(.85)}
+}
+
+/* ---------- v2: language ---------- */
+@keyframes popIn{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+body.lang-he{font-family:"Heebo","Cairo",system-ui,sans-serif}
+.langsw{display:flex;border:2px solid var(--line);border-radius:999px;overflow:hidden}
+.langsw button{background:transparent;color:var(--muted);border-radius:0;padding:3px 12px;font-size:14px}
+.langsw button.on{background:var(--accent);color:#04121f}
+.biglang{display:flex;gap:10px;justify-content:center;margin-bottom:10px}
+.biglang button{font-size:22px;padding:12px 30px;background:var(--card2);color:var(--text);border:2px solid var(--line)}
+.biglang button.on{border-color:var(--accent);background:#0c2a40;box-shadow:0 0 0 3px rgba(56,189,248,.25)}
+button.sel{border-color:var(--yellow)!important;background:#422006!important}
+
+/* ---------- CIA security-center sim ---------- */
+.meters{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:12px 0}
+.meterbox{background:var(--card2);border-radius:12px;padding:8px 12px}
+.meterbox .meter{margin:4px 0 0;height:12px}
+.arena{position:relative;height:130px;background:linear-gradient(90deg,#1a0b0b,#0e1629 40%,#06221a);border-radius:16px;border:1px solid var(--line);overflow:hidden;margin-bottom:10px}
+.arena .srv{position:absolute;inset-inline-end:3%;top:14px;font-size:60px;text-align:center;line-height:1}
+.arena .srv span{display:block;font-size:13px;color:var(--muted);margin-top:4px}
+.arena .att{position:absolute;top:30px;inset-inline-start:2%;font-size:58px;filter:drop-shadow(0 0 10px #ef4444)}
+.arena .att.boom{animation:boom .6s forwards}
+@keyframes boom{to{transform:scale(2) rotate(40deg);opacity:0}}
+.arena .flash{position:absolute;inset:0;pointer-events:none}
+.arena .flash.shield{animation:fl 0.7s;background:radial-gradient(circle at 85% 50%,rgba(56,189,248,.6),transparent 50%)}
+.arena .flash.hit{animation:fl 0.7s;background:rgba(239,68,68,.45)}
+@keyframes fl{from{opacity:1}to{opacity:0}}
+.evcard{background:var(--card2);border-radius:14px;padding:12px 16px;border-inline-start:6px solid var(--red);min-height:70px}
+.tbar{height:8px;background:#0a1020;border-radius:99px;overflow:hidden;margin:8px 0 12px}
+.tbar>div{height:100%;background:linear-gradient(90deg,var(--red),var(--yellow));transition:width .1s linear}
+.tools{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tools button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px}
+.tools button.good{border-color:var(--green)!important;background:#052e16}
+.tools button.bad{border-color:var(--red)!important;background:#3b0a0a}
+
+/* ---------- inbox sim ---------- */
+.mailapp{padding:0;overflow:hidden}
+.mailtop{background:#1e3a8a;padding:10px 16px;font-weight:800}
+.mailgrid{display:grid;grid-template-columns:300px 1fr;min-height:380px}
+.mlist{border-inline-end:1px solid var(--line);max-height:460px;overflow:auto}
+.mitem{display:flex;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);cursor:pointer;align-items:flex-start}
+.mitem:hover,.mitem.on{background:var(--card2)}
+.mitem.unread .mf{font-weight:900}
+.mitem .mf{font-size:15px;direction:ltr;text-align:start;unicode-bidi:plaintext}
+.mitem .ms{font-size:14px;color:var(--muted)}
+.mview{padding:16px 20px}
+.mview .empty{color:var(--muted);text-align:center;margin-top:120px;font-size:20px}
+.mhead{border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:12px;font-size:16px}
+.mbody{font-size:19px;line-height:1.8}
+.mbody.bubbly{background:#1f2937;border-radius:18px;padding:14px 16px;max-width:520px}
+.mlink{color:#60a5fa;text-decoration:underline;font-weight:700}
+.statusbar{background:#020617;padding:8px 16px;font-size:15px;border-top:1px solid var(--line);min-height:38px}
+.fakesite{border:3px solid var(--red);border-radius:14px;overflow:hidden;background:#f8fafc;color:#0f172a}
+.fakesite input{background:#fff;color:#000;border-color:#cbd5e1}
+.fakeurl{background:#fee2e2;color:#991b1b;padding:8px 12px;font-weight:700}
+
+/* ---------- malware sim ---------- */
+.defs{display:grid;gap:8px}
+.def{display:flex;gap:10px;align-items:center;background:var(--card2);border:2px solid var(--line);border-radius:12px;padding:8px 12px;cursor:pointer}
+.def input{width:22px;height:22px}
+.lan{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.room{background:#0a1020;border:2px solid var(--line);border-radius:12px;padding:8px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;position:relative;padding-top:24px}
+.room.walled{border:3px solid #f97316;box-shadow:0 0 0 2px rgba(249,115,22,.25)}
+.room .rlab{position:absolute;top:3px;inset-inline-start:10px;font-size:12px;color:var(--muted)}
+.pc{position:relative;font-size:28px;text-align:center;background:#111827;border-radius:10px;padding:4px 0;transition:background .3s}
+.pc.inf{background:#3b0a0a;animation:shake .3s}
+.pc.enc{background:#3b0764}
+.pc i{position:absolute;font-size:13px;bottom:0;inset-inline-end:2px;font-style:normal}
+.pc .p0{position:absolute;font-size:13px;top:-2px;inset-inline-start:2px}
+
+@media(max-width:780px){
+  .mailgrid{grid-template-columns:1fr}
+  .mlist{max-height:220px;border-inline-end:none;border-bottom:1px solid var(--line)}
+  .meters{grid-template-columns:1fr}
+  .tools{grid-template-columns:1fr 1fr}
+}
+
+/* ---------- v3: كل مهمة في شاشة واحدة ---------- */
+.actpills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;scroll-margin-top:66px}
+.actpill{display:flex;align-items:center;gap:8px;background:var(--card);border:2px solid var(--line);color:var(--text);padding:7px 14px;font-size:16px}
+.actpill .ic{font-size:22px}
+.actpill.on{border-color:var(--accent);background:var(--card2)}
+.actpill .done{font-size:14px}
+#actbody .card{padding:14px 16px}
+#actbody h3{font-size:19px;margin:0 0 6px}
+#actbody .hint{margin-top:8px;padding:7px 12px;font-size:15px}
+#actbody .muted{font-size:15px}
+/* CIA */
+.cia .ciatop{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.cia .meters{flex:1;margin:0;min-width:300px}
+.cia .meterbox{padding:4px 10px;font-size:14px}
+.cia .meterbox .meter{height:8px}
+.ciagrid{display:grid;grid-template-columns:1.3fr 1fr;gap:14px;align-items:start}
+.cia .arena{height:110px;margin-bottom:6px}
+.cia .arena .srv{font-size:48px;top:10px}
+.cia .arena .att{font-size:46px;top:26px}
+.cia .tbar{margin:0 0 8px}
+.cia .evcard{min-height:96px;display:flex;flex-direction:column;justify-content:center;gap:8px;padding:10px 14px}
+.cia .evcard.good{border-inline-start-color:var(--green);background:#052e16}
+.cia .evcard.bad{border-inline-start-color:var(--red);background:#3b0a0a}
+.cia .evcard button{align-self:flex-end;padding:6px 16px}
+.cia .tools{grid-template-columns:1fr 1fr;gap:8px}
+.cia .tools button{padding:8px 4px;font-size:15px;flex-direction:row;justify-content:flex-start;gap:8px}
+/* ACL */
+#aclCanvas{display:block;height:190px;width:auto;max-width:100%;margin:auto}
+#actbody .rules .rule{padding:5px 6px}
+#actbody .mission{padding:10px 12px;margin-bottom:8px}
+/* switch */
+#actbody .terminal{height:210px}
+#actbody .switchbox{margin-top:30px!important;padding:10px}
+#actbody .port{height:46px}
+/* pwned */
+#actbody .steps{grid-template-columns:1fr 1fr;gap:8px;margin-top:10px!important}
+#actbody .step{padding:8px 12px;font-size:15px}
+#actbody .steps{grid-template-areas:"s1 s2" "s3 s4" "s5 s4"}#s1{grid-area:s1}#s2{grid-area:s2}#s3{grid-area:s3}#s4{grid-area:s4}#s5{grid-area:s5}
+#actbody .hashview{font-size:14px;padding:6px}
+#actbody .hashlist{max-height:150px}
+#actbody .feedback{padding:10px 12px;margin-top:8px}
+/* dns */
+#actbody .travel{padding:6px 16px;font-size:26px}
+#actbody .layers{grid-template-columns:repeat(3,1fr)}
+#actbody .layers .layer:first-child{grid-column:1/-1}
+#actbody .layer .lh{padding:6px 10px;font-size:15px}
+#actbody .layer .lb{padding:6px 10px;font-size:13px}
+/* globe */
+#actbody #globe,#actbody #map2d{height:340px}
+/* malware */
+#actbody .def{padding:5px 10px}
+#actbody .pc{font-size:24px}
+/* inbox */
+#actbody .mailgrid{min-height:340px}
+#actbody .mbody{font-size:18px}
+/* caesar */
+#actbody .wheel{transform:scale(.8);margin:-30px auto}
+/* classify/phish scenarios */
+#actbody .scenario{padding:14px 18px;font-size:20px;margin:8px 0}
+@media(max-width:780px){.ciagrid{grid-template-columns:1fr}#actbody .steps,#actbody .layers{grid-template-columns:1fr}#actbody .steps{grid-template-areas:none}#actbody .step{grid-area:auto!important}}
+
+/* v3 layouts */
+.split{display:grid;grid-template-columns:1fr 1.25fr;gap:16px;align-items:start}
+#dres .empty{border:2px dashed var(--line);border-radius:12px;padding:60px 10px;text-align:center}
+#dres .layers{margin-top:8px;gap:6px}
+#dres table td,#dres table th{padding:2px 6px}
+.aclgrid{display:grid;grid-template-columns:1.5fr 1fr;gap:14px;align-items:start}
+.mchips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+#actbody .rules{grid-template-columns:1fr 1fr;gap:6px}
+#actbody .rule .cli{font-size:11.5px}
+#actbody .testres{font-size:14px}
+@media(max-width:900px){.split,.aclgrid{grid-template-columns:1fr}#actbody .rules{grid-template-columns:1fr}}
+#actbody .rules{grid-template-columns:1fr}
+#actbody .mailgrid{min-height:0;height:330px}
+#actbody .mlist{max-height:none;overflow:auto}
+#actbody .mview{overflow:auto}
+#actbody .mailtop{padding:6px 14px}
+#actbody .defs{grid-template-columns:1fr 1fr;gap:6px}
+#actbody .def small{font-size:12px}
+#actbody #mtype + h3,#actbody .defs + .row{margin-top:8px!important}
+#actbody .wheel{transform:scale(.72);margin:-42px auto}
+#actbody .cipherout{font-size:20px;min-height:44px;padding:6px 12px}
+.infogrid.four{grid-template-columns:auto 1fr auto 1fr;font-size:14px}
+#actbody .octets div{padding:2px 6px;font-size:14px}
+#actbody #globe,#actbody #map2d{height:330px}
+@media(max-width:780px){#actbody .mailgrid{height:auto}#actbody .defs{grid-template-columns:1fr}}
+
+#actbody .step .n{width:24px;height:24px;font-size:14px;margin-inline-end:6px;margin-left:0}
+#actbody .netlog{font-size:12px;padding:4px 8px}
+#actbody #wait{font-size:14px}
+#actbody #h5 .feedback{font-size:16px!important}
+#actbody #h5 p{margin:2px 0;font-size:13px}
+/* page always long enough so the activity can start at the top of the screen */
+#actbody{min-height:calc(100vh - 150px)}
+#dres .layer .lb{font-size:12.5px}
+#actbody .travel{margin-top:6px}
+#actbody .rule{flex-wrap:nowrap}
+#actbody .rule .cli{flex-basis:auto;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+@media(max-width:900px){#actbody .rule{flex-wrap:wrap}#actbody .rule .cli{flex-basis:100%}}
+.aclgrid{grid-template-columns:1.1fr 1fr}
+.aclmis{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:8px 12px!important}
+.aclmis .mchips{margin:0}
+#actbody .rule{padding:4px 6px;gap:4px;flex-wrap:wrap}
+#actbody .rule select{font-size:14px;padding:3px 4px;border-radius:8px}
+#actbody .rule button.small{padding:3px 6px;font-size:13px}
+#actbody .rule .cli{flex-basis:100%;font-size:11px}
+#actbody .rules{gap:5px}
+
+</style>
+</head>
+<body>
+  <header class="topbar" id="top"></header>
+  <main id="main"><div class="card" style="text-align:center">⏳ جارِ التحميل…</div></main>
+
+  <!-- مكتبات خارجية مجانية: Globe.gl (كرة أرضية 3D مبنية على Three.js) و-Leaflet -->
+  <script src="https://unpkg.com/globe.gl"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+// =====================================================
+//  محتوى اللومدة — ثنائي اللغة (عربي / עברית)
+//  B(ar, he) = نص بلغتين. T(x) يختار حسب لغة الطالب.
+// =====================================================
+const B = (ar, he) => ({ ar, he });
+
+const STAGES = [
+  // ======================= المرحلة 1 =======================
+  {
+    id: 1, icon: "🛡️", color: "#38bdf8",
+    title: B("ما هو أمن المعلومات؟", "מהי אבטחת מידע?"),
+    badge: { icon: "🔺", name: B("حارس المثلث", "שומר המשולש") },
+    goal: B("تعرف لماذا نحمي المعلومات، وما هي المبادئ الثلاثة: סודיות، שלמות، זמינות.",
+            "תבינו למה מגינים על מידע, ומהם שלושת העקרונות: סודיות, שלמות, זמינות."),
+    slides: [
+      { icon: "📱", visual: "info", title: B("المعلومات حولك في كل مكان", "מידע נמצא סביבך בכל מקום"),
+        text: B("صورك، رسائل الواتساب، علاماتك في المدرسة، كلمة سر الإنستغرام… كلها <b>معلومات</b>. بالعبرية: <b>מידע</b>.",
+                "התמונות שלך, הודעות הוואטסאפ, הציונים בבית הספר, הסיסמה לאינסטגרם… כל אלה הם <b>מידע</b>."),
+        term: { he: "מידע", ar: "معلومات", en: "Information" } },
+      { icon: "😱", title: B("ماذا لو سُرقت؟", "מה אם יגנבו אותו?"),
+        text: B("تخيّل أن شخصاً دخل حسابك ونشر باسمك، أو غيّر علامتك، أو أوقف موقع الامتحان يوم البجروت. <b>أمن المعلومات</b> هو كل ما نفعله حتى لا يحدث هذا.",
+                "דמיינו שמישהו נכנס לחשבון שלכם ופרסם בשמכם, שינה לכם ציון, או הפיל את אתר הבחינות ביום הבגרות. <b>אבטחת מידע</b> היא כל מה שעושים כדי שזה לא יקרה."),
+        term: { he: "אבטחת מידע", ar: "أمن المعلومات", en: "Information Security" } },
+      { icon: "🔒", visual: "conf", title: B("المبدأ الأول: السرّية", "עיקרון ראשון: סודיות"),
+        text: B("فقط المسموح لهم يرون المعلومة. علامتك يراها أنت والمعلم فقط — ليس كل الصف.",
+                "רק מי שמורשה רואה את המידע. את הציון שלך רואים רק אתה והמורה — לא כל הכיתה."),
+        term: { he: "סודיות", ar: "سرّية", en: "Confidentiality" } },
+      { icon: "✍️", visual: "integ", title: B("المبدأ الثاني: السلامة (عدم التغيير)", "עיקרון שני: שלמות (אין שינוי)"),
+        text: B("لا أحد يستطيع <b>تغيير</b> المعلومة بدون إذن. إذا غيّر طالب علامته من 55 إلى 95 — هذا خرق للـ שלמות.",
+                "אף אחד לא יכול <b>לשנות</b> את המידע בלי הרשאה. תלמיד ששינה ציון מ-55 ל-95 — פגע בשלמות."),
+        term: { he: "שלמות", ar: "سلامة المعلومة", en: "Integrity" } },
+      { icon: "⏰", visual: "avail", title: B("المبدأ الثالث: التوفّر", "עיקרון שלישי: זמינות"),
+        text: B("المعلومة موجودة <b>وقت ما نحتاجها</b>. إذا وقع موقع المدرسة يوم تسليم المشروع — هذا خرق للـ זמינות.",
+                "המידע נגיש <b>כשצריכים אותו</b>. אם אתר בית הספר נפל ביום הגשת הפרויקט — זו פגיעה בזמינות."),
+        term: { he: "זמינות", ar: "توفّر", en: "Availability" } },
+      { icon: "🔺", visual: "cia", title: B("مثلث أمن المعلومات", "משולש אבטחת המידע"),
+        text: B("تذكّر <b>CIA</b>: سرّية (C) + سلامة (I) + توفّر (A). كل هجوم يضرب واحداً منها على الأقل.",
+                "זכרו <b>CIA</b>: סודיות (C) + שלמות (I) + זמינות (A). כל מתקפה פוגעת לפחות באחד מהם."),
+        term: { he: "משולש CIA", ar: "مثلث CIA", en: "CIA Triad" } }
+    ],
+    activities: [
+      { id: "ciasim", type: "ciasim", icon: "🏫", title: B("محاكاة: أنت مدير الأمن في المدرسة", "סימולציה: אתם מנהלי האבטחה של בית הספר"),
+        desc: B("هجمات تصل لخادم المدرسة — اختر أداة الحماية الصحيحة قبل أن ينتهي الوقت!", "מתקפות מגיעות לשרת בית הספר — בחרו את כלי ההגנה הנכון לפני שהזמן נגמר!") },
+      { id: "classify", type: "classify", icon: "🧩", title: B("صنّف الحادثة", "סווגו את האירוע"),
+        desc: B("اقرأ كل حادثة واختر أي مبدأ تم خرقه.", "קראו כל אירוע ובחרו באיזה עיקרון פגעו.") }
+    ],
+    classify: [
+      { text: B("طالب سرق كلمة سر المعلم وقرأ أسئلة الامتحان قبل موعده.", "תלמיד גנב את סיסמת המורה וקרא את שאלות המבחן מראש."), answer: "c", explain: B("شخص غير مسموح له رأى المعلومة → סודיות.", "מישהו לא מורשה ראה את המידע → סודיות.") },
+      { text: B("هاكر دخل نظام المدرسة وغيّر علامات الرياضيات.", "האקר חדר למערכת בית הספר ושינה ציונים במתמטיקה."), answer: "i", explain: B("المعلومة تغيّرت بدون إذن → שלמות.", "המידע שונה בלי הרשאה → שלמות.") },
+      { text: B("موقع البنك توقّف ساعات بسبب هجوم ضخم (DDoS).", "אתר הבנק קרס לכמה שעות בגלל מתקפת DDoS."), answer: "a", explain: B("الناس لا يستطيعون الوصول للخدمة → זמינות.", "אנשים לא יכולים להגיע לשירות → זמינות.") },
+      { text: B("شخص نشر صور مجموعة الصف الخاصة على الإنترنت.", "מישהו פרסם ברשת תמונות פרטיות מקבוצת הכיתה."), answer: "c", explain: B("معلومات خاصة وصلت لمن لا يحق له → סודיות.", "מידע פרטי הגיע למי שאסור לו → סודיות.") },
+      { text: B("فيروس شفّر كل ملفات الحاسوب وطلب فدية لفتحها.", "נוזקה הצפינה את כל הקבצים ודרשה כופר."), answer: "a", explain: B("الملفات موجودة لكن لا يمكن استخدامها → זמינות.", "הקבצים קיימים אבל אי אפשר להשתמש בהם → זמינות.") },
+      { text: B("رسالة من المدير عدّلها أحدهم في الطريق.", "מישהו שינה בדרך הודעה שנשלחה מהמנהל."), answer: "i", explain: B("المحتوى تغيّر → שלמות.", "התוכן השתנה → שלמות.") },
+      { text: B("انقطع الإنترنت عن المدرسة يوم امتحان محوسب.", "האינטרנט בבית הספר נפל ביום מבחן ממוחשב."), answer: "a", explain: B("الخدمة غير متاحة وقت الحاجة → זמינות.", "השירות לא זמין כשצריך → זמינות.") },
+      { text: B("موظف فضولي فتح ملفات المرضى في المستشفى بدون سبب.", "עובד סקרן פתח תיקים של מטופלים בבית חולים בלי סיבה."), answer: "c", explain: B("اطّلاع بدون صلاحية → סודיות.", "צפייה בלי הרשאה → סודיות.") }
+    ],
+    // أحداث محاكاة مدير الأمن
+    ciasim: [
+      { icon: "🕵️", hit: "c", ok: ["perm", "enc"], t: B("طالب يحاول فتح ملف العلامات من حاسوب المعلم.", "תלמיד מנסה לפתוח את קובץ הציונים מהמחשב של המורה.") },
+      { icon: "🌊", hit: "a", ok: ["fw"], t: B("آلاف الطلبات المزيفة تُغرق موقع المدرسة (DDoS)!", "אלפי בקשות מזויפות מציפות את אתר בית הספר (DDoS)!") },
+      { icon: "✏️", hit: "i", ok: ["hash", "backup"], t: B("أحدهم غيّر سراً العلامات في قاعدة البيانات.", "מישהו שינה בסתר ציונים במסד הנתונים.") },
+      { icon: "📡", hit: "c", ok: ["enc"], t: B("هاكر يتنصّت على شبكة الواي-فاي ويقرأ الرسائل.", "האקר מצותת לרשת ה-WiFi וקורא הודעות.") },
+      { icon: "🔥", hit: "a", ok: ["backup", "spare"], t: B("حريق في غرفة الخوادم! الخادم الرئيسي احترق.", "שריפה בחדר השרתים! השרת הראשי נשרף.") },
+      { icon: "💰", hit: "a", ok: ["backup"], t: B("برنامج فدية شفّر كل ملفات المعلمين.", "כופרה הצפינה את כל קבצי המורים.") },
+      { icon: "📝", hit: "i", ok: ["hash"], t: B("ملف الامتحان وصل للمعلمين — هل تغيّر في الطريق؟", "קובץ המבחן הגיע למורים — האם שונה בדרך?") },
+      { icon: "🔓", hit: "c", ok: ["perm"], t: B("كلمة سر المدير هي 123456، ومحاولات دخول كثيرة!", "הסיסמה של המנהל היא 123456, ויש ניסיונות התחברות רבים!") }
+    ],
+    quiz: [
+      { q: B("ماذا يعني مبدأ סודיות؟", "מה פירוש העיקרון סודיות?"), options: [B("أن المعلومة لا تتغير", "שהמידע לא משתנה"), B("أن فقط المسموح لهم يرون المعلومة", "שרק מורשים רואים את המידע"), B("أن المعلومة متاحة دائماً", "שהמידע תמיד זמין"), B("أن نحذف المعلومة", "שמוחקים את המידע")], answer: 1, explain: B("סודיות = الوصول فقط لمن له صلاحية.", "סודיות = גישה רק למי שמורשה.") },
+      { q: B("طالب غيّر علامته في النظام. أي مبدأ تم خرقه؟", "תלמיד שינה את הציון שלו במערכת. באיזה עיקרון פגע?"), options: [B("זמינות", "זמינות"), B("סודיות", "סודיות"), B("שלמות", "שלמות"), B("لا شيء", "באף אחד")], answer: 2, explain: B("تغيير المعلومة بدون إذن = שלמות.", "שינוי מידע בלי הרשאה = שלמות.") },
+      { q: B("موقع الامتحانات وقع يوم الامتحان. أي مبدأ تضرر؟", "אתר הבחינות קרס ביום המבחן. איזה עיקרון נפגע?"), options: [B("זמינות", "זמינות"), B("שלמות", "שלמות"), B("סודיות", "סודיות"), B("التشفير", "הצפנה")], answer: 0, explain: B("الخدمة لم تكن متاحة وقت الحاجة.", "השירות לא היה זמין כשצריך.") },
+      { q: B("ماذا تعني الأحرف CIA في أمن المعلومات؟", "מה פירוש CIA באבטחת מידע?"), options: [B("وكالة المخابرات الأمريكية", "סוכנות הביון האמריקאית"), B("سرّية، سلامة، توفّر", "סודיות, שלמות, זמינות"), B("حاسوب، إنترنت، تطبيق", "מחשב, אינטרנט, אפליקציה"), B("تشفير، هوية، وصول", "הצפנה, זהות, גישה")], answer: 1, explain: B("Confidentiality, Integrity, Availability.", "Confidentiality, Integrity, Availability.") },
+      { q: B("أي أداة تحمي من DDoS؟", "איזה כלי מגן מפני DDoS?"), options: [B("جدار ناري وتصفية الحركة", "חומת אש וסינון תעבורה"), B("كلمة سر طويلة", "סיסמה ארוכה"), B("تشفير الملفات", "הצפנת קבצים"), B("Hash", "Hash")], answer: 0, explain: B("DDoS يضرب الזמינות — نحتاج تصفية الحركة.", "DDoS פוגע בזמינות — צריך לסנן תעבורה.") }
+    ]
+  },
+
+  // ======================= المرحلة 2 =======================
+  {
+    id: 2, icon: "🎣", color: "#f97316",
+    title: B("التهديدات والاحتيال", "איומים ומתקפות"),
+    badge: { icon: "🕵️", name: B("صياد الاحتيال", "צייד ההונאות") },
+    goal: B("تتعرف على: البرامج الضارة، פישינג، הנדסה חברתית — وتتعلم كشف الاحتيال وإيقاف انتشار الفيروسات.",
+            "תכירו נוזקות, פישינג והנדסה חברתית, ותלמדו לזהות הונאות ולעצור התפשטות של וירוסים."),
+    slides: [
+      { icon: "🦠", title: B("البرامج الضارة", "נוזקות"),
+        text: B("برنامج يُصنع ليؤذيك: يسرق، يخرّب، أو يتجسّس. اسمه بالعبرية <b>נוזקה</b> (من كلمة נזק = ضرر).",
+                "תוכנה שנבנתה כדי להזיק: לגנוב, להרוס או לרגל. בעברית <b>נוזקה</b> (מהמילה נזק)."),
+        term: { he: "נוזקה", ar: "برنامج ضار", en: "Malware" } },
+      { icon: "🐴", visual: "malware", title: B("أنواع مشهورة", "סוגים מוכרים"),
+        text: B("<b>וירוס</b> يلتصق بملف وينتشر عند فتحه.<br><b>תולעת</b> تنتشر وحدها عبر الشبكة.<br><b>סוס טרויאני</b> يتنكّر كلعبة أو برنامج مفيد.<br><b>כופרה</b> تشفّر ملفاتك وتطلب فدية.",
+                "<b>וירוס</b> נצמד לקובץ ומתפשט כשפותחים אותו.<br><b>תולעת</b> מתפשטת לבד דרך הרשת.<br><b>סוס טרויאני</b> מתחפש למשחק או לתוכנה שימושית.<br><b>כופרה</b> מצפינה קבצים ודורשת כופר."),
+        term: { he: "כופרה", ar: "برنامج فدية", en: "Ransomware" } },
+      { icon: "🎣", visual: "phish", title: B("الاصطياد: פישינג", "פישינג (דיוג)"),
+        text: B("رسالة مزيفة تبدو من البنك أو إنستغرام أو البريد، هدفها أن تضغط على رابط وتكتب كلمة السر. مثل الصيّاد الذي يضع الطُّعم.",
+                "הודעה מזויפת שנראית כאילו נשלחה מהבנק, מאינסטגרם או מהדואר, ומטרתה שתלחצו על קישור ותקלידו סיסמה. כמו דייג ששם פיתיון."),
+        term: { he: "פישינג / דיוג", ar: "تصيّد احتيالي", en: "Phishing" } },
+      { icon: "🎭", title: B("الهندسة الاجتماعية", "הנדסה חברתית"),
+        text: B("المهاجم لا يخترق الحاسوب — يخترق <b>الإنسان</b>. يتصل ويقول «أنا من الدعم الفني، أعطني الكود الذي وصلك».",
+                "התוקף לא פורץ למחשב — הוא פורץ <b>לאדם</b>. מתקשר ואומר: «אני מהתמיכה הטכנית, תן לי את הקוד שקיבלת»."),
+        term: { he: "הנדסה חברתית", ar: "هندسة اجتماعية", en: "Social Engineering" } },
+      { icon: "🔍", title: B("5 علامات للرسالة المزيفة", "5 סימנים להודעה מזויפת"),
+        text: B("1️⃣ استعجال: «خلال ساعة سيُغلق حسابك!»<br>2️⃣ رابط غريب: <code>paypa1-secure.xyz</code><br>3️⃣ طلب كلمة سر أو كود<br>4️⃣ جائزة لم تشارك بها<br>5️⃣ أخطاء إملائية ومرسل غريب",
+                "1️⃣ לחץ זמן: «החשבון ייסגר תוך שעה!»<br>2️⃣ קישור מוזר: <code>paypa1-secure.xyz</code><br>3️⃣ בקשת סיסמה או קוד<br>4️⃣ פרס בתחרות שלא השתתפת בה<br>5️⃣ שגיאות כתיב ושולח לא מוכר"),
+        term: { he: "סימני אזהרה", ar: "علامات تحذير", en: "Red flags" } },
+      { icon: "✅", title: B("ماذا أفعل؟", "מה עושים?"),
+        text: B("لا تضغط على الرابط. افتح التطبيق الرسمي بنفسك. لا تعطِ أي كود لأحد. حدّث جهازك، واعمل نسخة احتياطية، وفعّل <b>אימות דו-שלבי</b>.",
+                "לא לוחצים על הקישור. פותחים את האפליקציה הרשמית לבד. לא נותנים קוד לאף אחד. מעדכנים את המכשיר, מגבים, ומפעילים <b>אימות דו-שלבי</b>."),
+        term: { he: "אימות דו-שלבי", ar: "تحقق بخطوتين", en: "2FA" } }
+    ],
+    activities: [
+      { id: "inbox", type: "inbox", icon: "📬", title: B("محاكاة: صندوق البريد المشبوه", "סימולציה: תיבת הדואר החשודה"),
+        desc: B("افتح الرسائل، افحص الروابط، وبلّغ عن الاحتيال — احذر أن تقع في الفخ!", "פתחו הודעות, בדקו קישורים ודווחו על הונאות — היזהרו לא ליפול בפח!") },
+      { id: "malsim", type: "malsim", icon: "🦠", title: B("محاكاة: انتشار البرامج الضارة", "סימולציה: התפשטות נוזקות"),
+        desc: B("أطلق دودة أو برنامج فدية في شبكة المدرسة، ثم أوقفها بأدوات الحماية.", "שחררו תולעת או כופרה ברשת בית הספר, ואז עצרו אותה בעזרת כלי הגנה.") }
+    ],
+    phish: [
+      { kind: "sms", from: "Israel Post", subject: B("طرد عالق", "חבילה מעוכבת"), fake: true,
+        body: B("طردك عالق في الجمارك. ادفع 4.90₪ خلال 24 ساعة وإلا سيعاد:", "החבילה שלך מעוכבת במכס. שלם 4.90₪ תוך 24 שעות אחרת תוחזר:"),
+        link: { text: "israelpost.co.il/track", real: "http://israelpost-pay.top/login" },
+        clues: [B("الرابط الحقيقي ليس موقع البريد الرسمي", "הקישור האמיתי הוא לא האתר הרשמי של הדואר"), B("استعجال: خلال 24 ساعة", "לחץ זמן: תוך 24 שעות"), B("طلب دفع عبر رابط في رسالة", "בקשת תשלום דרך קישור בהודעה")] },
+      { kind: "email", from: "security@instagrarn.com", subject: B("حسابك سيُحذف!", "החשבון שלך יימחק!"), fake: true,
+        body: B("لاحظنا نشاطاً مشبوهاً. أكّد كلمة السر الآن وإلا سيحذف حسابك نهائياً:", "זיהינו פעילות חשודה. אשר את הסיסמה עכשיו, אחרת החשבון יימחק לצמיתות:"),
+        link: { text: B("تأكيد الحساب", "אישור החשבון"), real: "https://instagrarn-verify.net/login" },
+        clues: [B("اسم المرسل instagrarn (rn بدل m)", "השולח instagrarn (rn במקום m)"), B("طلب كلمة السر", "בקשת סיסמה"), B("تهديد واستعجال", "איום ולחץ זמן")] },
+      { kind: "sms", from: "WhatsApp", subject: B("رمز تحقق", "קוד אימות"), fake: false,
+        body: B("رمز التحقق الخاص بك: 482-117. لا تشارك هذا الرمز مع أي أحد.", "קוד האימות שלך: 482-117. אל תשתף את הקוד עם אף אחד."),
+        clues: [B("لا يوجد رابط", "אין קישור"), B("لا يطلب منك شيئاً", "לא מבקשים ממך כלום"), B("يحذّرك من مشاركة الرمز", "מזהירים אותך לא לשתף")] },
+      { kind: "chat", from: B("صديقك أحمد", "החבר שלך יוסי"), subject: B("رسالة واتساب", "הודעת וואטסאפ"), fake: true,
+        body: B("يا زلمة، بعتلك كود بالغلط على تلفونك، ابعتلي إياه بسرعة 🙏", "אחי, שלחתי לך קוד בטעות לטלפון, תשלח לי אותו מהר 🙏"),
+        clues: [B("حساب الصديق قد يكون مسروقاً", "ייתכן שהחשבון של החבר נפרץ"), B("طلب كود التحقق = محاولة سرقة حسابك", "בקשת קוד אימות = ניסיון לגנוב את החשבון שלך"), B("استعجال", "לחץ זמן")] },
+      { kind: "email", from: "noreply@school.org.il", subject: B("تذكير: امتحان الرياضيات يوم الخميس", "תזכורת: מבחן במתמטיקה ביום חמישי"), fake: false,
+        body: B("مرحباً، نذكّركم أن الامتحان يوم الخميس الساعة 8:00. الجدول في موقع المدرسة:", "שלום, נזכיר שהמבחן ביום חמישי ב-8:00. מערכת השעות באתר בית הספר:"),
+        link: { text: "school.org.il/exams", real: "https://school.org.il/exams" },
+        clues: [B("معلومة عادية بلا طلبات", "מידע רגיל בלי בקשות"), B("الرابط الحقيقي = الرابط المكتوب", "הקישור האמיתי = הקישור הכתוב"), B("مرسل معروف", "שולח מוכר")] },
+      { kind: "email", from: "prize@winner-iphone17.com", subject: B("🎉 مبروك! ربحت iPhone 17", "🎉 מזל טוב! זכית ב-iPhone 17"), fake: true,
+        body: B("أنت الزائر رقم 1,000,000! ادفع رسوم الشحن 9₪ فقط:", "אתה המבקר המיליון! שלם רק 9₪ דמי משלוח:"),
+        link: { text: B("استلم الجائزة", "קבל את הפרס"), real: "http://free-prize-claim.win/card" },
+        clues: [B("جائزة لم تشارك بها", "פרס בתחרות שלא השתתפת בה"), B("طلب بطاقة ائتمان", "בקשת כרטיס אשראי"), B("مرسل غريب", "שולח לא מוכר")] }
+    ],
+    quiz: [
+      { q: B("ما هو פישינג؟", "מהו פישינג?"), options: [B("نوع من الألعاب", "סוג של משחק"), B("رسالة مزيفة لسرقة معلومات مثل كلمة السر", "הודעה מזויפת שנועדה לגנוב מידע כמו סיסמה"), B("تسريع للحاسوب", "האצת המחשב"), B("برنامج مضاد للفيروسات", "אנטי-וירוס")], answer: 1, explain: B("פישינג = تصيّد بطُعم.", "פישינג = דיג עם פיתיון.") },
+      { q: B("أي برنامج ضار يشفّر الملفات ويطلب فدية؟", "איזו נוזקה מצפינה קבצים ודורשת כופר?"), options: [B("תולעת", "תולעת"), B("כופרה", "כופרה"), B("סוס טרויאני", "סוס טרויאני"), B("חומת אש", "חומת אש")], answer: 1, explain: B("כופרה = Ransomware.", "כופרה = Ransomware.") },
+      { q: B("أي برنامج ضار ينتشر وحده عبر الشبكة؟", "איזו נוזקה מתפשטת לבד ברשת?"), options: [B("תולעת", "תולעת"), B("וירוס", "וירוס"), B("סוס טרויאני", "סוס טרויאני"), B("Cookie", "Cookie")], answer: 0, explain: B("الدودة لا تحتاج أن يفتحها أحد.", "תולעת לא צריכה שמישהו יפתח אותה.") },
+      { q: B("ما أفضل حماية من برنامج الفدية؟", "מה ההגנה הטובה ביותר מפני כופרה?"), options: [B("نسخة احتياطية (גיבוי)", "גיבוי"), B("شاشة أكبر", "מסך גדול יותר"), B("إيقاف التحديثات", "כיבוי עדכונים"), B("الدفع للمهاجم", "לשלם לתוקף")], answer: 0, explain: B("مع الגיבוי نسترجع الملفات بدون دفع.", "עם גיבוי משחזרים את הקבצים בלי לשלם.") },
+      { q: B("شخص اتصل وقال إنه من البنك وطلب الكود. هذا:", "מישהו התקשר, אמר שהוא מהבנק וביקש את הקוד. זו:"), options: [B("הנדסה חברתית", "הנדסה חברתית"), B("גיבוי", "גיבוי"), B("הצפנה", "הצפנה"), B("ACL", "ACL")], answer: 0, explain: B("خداع الإنسان نفسه.", "הטעיה של האדם עצמו.") }
+    ]
+  },
+
+  // ======================= المرحلة 3 =======================
+  {
+    id: 3, icon: "🔐", color: "#a78bfa",
+    title: B("كلمات السر والتشفير", "סיסמאות והצפנה"),
+    badge: { icon: "🗝️", name: B("سيد التشفير", "אלוף ההצפנה") },
+    goal: B("تبني كلمة سر قوية، وتفهم الفرق بين التشفير (הצפנה) والبصمة (Hash)، وتجرّب فحصاً حقيقياً عبر API.",
+            "תבנו סיסמה חזקה, תבינו את ההבדל בין הצפנה לגיבוב (Hash), ותנסו בדיקה אמיתית דרך API."),
+    slides: [
+      { icon: "🔑", title: B("كلمة سر قوية", "סיסמה חזקה"),
+        text: B("طويلة (12 حرفاً أو أكثر) + أحرف كبيرة وصغيرة + أرقام + رموز. والأسهل: <b>جملة</b> مثل <code>Ana-Bahib-Falafel-7!</code>",
+                "ארוכה (12 תווים ומעלה) + אותיות גדולות וקטנות + מספרים + סימנים. הכי קל: <b>משפט</b> כמו <code>Ani-Ohev-Falafel-7!</code>"),
+        term: { he: "סיסמה חזקה", ar: "كلمة سر قوية", en: "Strong password" } },
+      { icon: "📦", visual: "encrypt", title: B("التشفير", "הצפנה"),
+        text: B("نحوّل الرسالة إلى «خربشة» لا يفهمها أحد، ومن معه <b>المفتاح</b> فقط يستطيع إرجاعها. مثل صندوق بقفل.",
+                "הופכים את ההודעה ל«ג'יבריש», ורק מי שיש לו את <b>המפתח</b> יכול להחזיר אותה. כמו תיבה עם מנעול."),
+        term: { he: "הצפנה", ar: "تشفير", en: "Encryption" } },
+      { icon: "🔄", visual: "caesar", title: B("شيفرة قيصر", "צופן קיסר"),
+        text: B("أقدم تشفير في التاريخ: نزيح كل حرف 3 أماكن. A ← D، B ← E. المفتاح هنا هو الرقم <b>3</b>.",
+                "ההצפנה הוותיקה בהיסטוריה: מזיזים כל אות 3 מקומות. A ← D, B ← E. המפתח כאן הוא <b>3</b>."),
+        term: { he: "צופן קיסר", ar: "شيفرة قيصر", en: "Caesar cipher" } },
+      { icon: "🧃", visual: "hash", title: B("الـ Hash — مثل العصّارة", "Hash — כמו מסחטה"),
+        text: B("تضع برتقالة فيخرج عصير، ولا يمكن إرجاع العصير إلى برتقالة! الـ Hash يحوّل أي نص إلى «بصمة» ثابتة الطول ولا يمكن الرجوع للنص. لذلك المواقع تحفظ الـ Hash بدل كلمة السر.",
+                "שמים תפוז ויוצא מיץ, ואי אפשר להחזיר מיץ לתפוז! Hash הופך כל טקסט ל«טביעת אצבע» באורך קבוע, ואי אפשר לחזור לטקסט. לכן אתרים שומרים Hash במקום סיסמה."),
+        term: { he: "גיבוב (Hash)", ar: "دالة بصمة / تجزئة", en: "Hash" } },
+      { icon: "🧬", title: B("SHA-1", "SHA-1"),
+        text: B("خوارزمية Hash تعطي دائماً <b>40 حرفاً</b> (أرقام وأحرف A-F). تغيير حرف واحد يغيّر البصمة بالكامل!",
+                "אלגוריתם Hash שתמיד מחזיר <b>40 תווים</b> (ספרות ואותיות A-F). שינוי של תו אחד משנה את כל טביעת האצבע!"),
+        term: { he: "פונקציה חד-כיוונית", ar: "دالة باتجاه واحد", en: "One-way function" } },
+      { icon: "🕶️", visual: "kanon", title: B("K-Anonymity: نسأل بدون أن نكشف", "K-Anonymity: שואלים בלי לחשוף"),
+        text: B("كيف نفحص إن كانت كلمة السر مسرّبة <b>بدون</b> أن نرسلها؟ نرسل أول 5 أحرف من البصمة فقط، والخادم يعيد مئات البصمات المتشابهة، ونحن نبحث عن الباقي في جهازنا.",
+                "איך בודקים אם סיסמה דלפה <b>בלי</b> לשלוח אותה? שולחים רק 5 תווים ראשונים מה-Hash, השרת מחזיר מאות תוצאות דומות, ואנחנו מחפשים את השאר במחשב שלנו."),
+        term: { he: "K-Anonymity", ar: "إخفاء الهوية بين K", en: "K-Anonymity" } }
+    ],
+    activities: [
+      { id: "strength", type: "strength", icon: "💪", title: B("مقياس قوة كلمة السر", "מד חוזק סיסמה"), desc: B("اكتب كلمة سر (ليست الحقيقية!) واجعلها «قوية جداً».", "הקלידו סיסמה (לא האמיתית!) והגיעו ל«חזקה מאוד».") },
+      { id: "caesar", type: "caesar", icon: "🎡", title: B("عجلة قيصر", "גלגל קיסר"), desc: B("شفّر وفكّ التشفير، وحلّ الرسائل السرية.", "הצפינו, פענחו ופתרו הודעות סודיות.") },
+      { id: "pwned", type: "pwned", icon: "🧪", title: B("مختبر التسريبات (API حقيقي)", "מעבדת הדליפות (API אמיתי)"), desc: B("افحص إن كانت كلمة سر ظهرت في تسريبات حقيقية.", "בדקו אם סיסמה הופיעה בדליפות אמיתיות.") }
+    ],
+    quiz: [
+      { q: B("أيّ كلمة سر هي الأقوى؟", "איזו סיסמה הכי חזקה?"), options: [B("123456", "123456"), B("ahmad2008", "yossi2008"), B("Ana-Bahib-Falafel-7!", "Ani-Ohev-Falafel-7!"), B("password", "password")], answer: 2, explain: B("طويلة وفيها كل أنواع الأحرف.", "ארוכה ויש בה כל סוגי התווים.") },
+      { q: B("ما الفرق بين הצפנה وגיבוב (Hash)؟", "מה ההבדל בין הצפנה לגיבוב (Hash)?"), options: [B("لا فرق", "אין הבדל"), B("التشفير يُفك بالمفتاح، والـ Hash باتجاه واحد", "הצפנה נפתחת עם מפתח, Hash הוא חד-כיווני"), B("الـ Hash أسرع فقط", "Hash רק מהיר יותר"), B("التشفير للصور فقط", "הצפנה רק לתמונות")], answer: 1, explain: B("الـ Hash لا رجعة فيه.", "מ-Hash אי אפשר לחזור.") },
+      { q: B("في شيفرة قيصر بإزاحة 3، الحرف C يصبح:", "בצופן קיסר עם הזזה 3, האות C הופכת ל:"), options: [B("D", "D"), B("E", "E"), B("F", "F"), B("Z", "Z")], answer: 2, explain: B("C → D → E → F.", "C → D → E → F.") },
+      { q: B("كم حرفاً يكون ناتج SHA-1؟", "כמה תווים יש בפלט של SHA-1?"), options: [B("5", "5"), B("16", "16"), B("40", "40"), B("100", "100")], answer: 2, explain: B("160 bit = 40 حرفاً Hex.", "160 ביט = 40 תווי Hex.") },
+      { q: B("في K-Anonymity، ماذا نرسل للخادم؟", "ב-K-Anonymity, מה שולחים לשרת?"), options: [B("كلمة السر كاملة", "את כל הסיסמה"), B("البصمة كاملة", "את כל ה-Hash"), B("أول 5 أحرف من البصمة فقط", "רק 5 תווים ראשונים מה-Hash"), B("اسم المستخدم", "שם משתמש")], answer: 2, explain: B("والمقارنة تتم في جهازنا.", "וההשוואה נעשית אצלנו.") }
+    ]
+  },
+
+  // ======================= المرحلة 4 =======================
+  {
+    id: 4, icon: "🌐", color: "#22c55e",
+    title: B("الشبكة: IP، المنافذ و-ACL", "רשת: IP, פורטים ו-ACL"),
+    badge: { icon: "🧱", name: B("مهندس الجدار الناري", "מהנדס חומת האש") },
+    goal: B("تفهم ما هو عنوان IP والمنفذ، وتحدد موقع خوادم حقيقية على الكرة الأرضية، وتبرمج ACL في الراوتر.",
+            "תבינו מהי כתובת IP ומהו פורט, תאתרו שרתים אמיתיים על הגלובוס, ותתכנתו ACL בנתב."),
+    slides: [
+      { icon: "🏠", visual: "ip", title: B("عنوان IP = عنوان البيت", "כתובת IP = כתובת הבית"),
+        text: B("كل جهاز في الشبكة له عنوان حتى تصله الرسائل. مثال: <code>192.168.1.10</code> — أربعة أرقام، كل رقم بين 0 و-255.",
+                "לכל מכשיר ברשת יש כתובת כדי שההודעות יגיעו אליו. לדוגמה: <code>192.168.1.10</code> — ארבעה מספרים, כל אחד בין 0 ל-255."),
+        term: { he: "כתובת IP", ar: "عنوان IP", en: "IP Address" } },
+      { icon: "🏘️", title: B("عنوان داخلي وعنوان عام", "כתובת פרטית וכתובת ציבורית"),
+        text: B("داخل البيت أو المدرسة: عناوين <b>פרטיות</b> تبدأ بـ 192.168 أو 10. في الإنترنت: عنوان <b>ציבורית</b> واحد للراوتر يمثّل الجميع.",
+                "בתוך הבית או בית הספר: כתובות <b>פרטיות</b> שמתחילות ב-192.168 או 10. באינטרנט: כתובת <b>ציבורית</b> אחת לנתב שמייצגת את כולם."),
+        term: { he: "כתובת פרטית / ציבורית", ar: "عنوان خاص / عام", en: "Private / Public IP" } },
+      { icon: "🚪", visual: "ports", title: B("المنفذ (פורט) = رقم الباب", "פורט = מספר הדלת"),
+        text: B("العنوان يوصلك للعمارة، والمنفذ يوصلك للشقة: <b>80</b> HTTP، <b>443</b> HTTPS، <b>53</b> DNS، <b>22</b> SSH، <b>23</b> Telnet (غير آمن!).",
+                "הכתובת מביאה אותך לבניין, והפורט לדירה: <b>80</b> HTTP, <b>443</b> HTTPS, <b>53</b> DNS, <b>22</b> SSH, <b>23</b> Telnet (לא מאובטח!)."),
+        term: { he: "פורט", ar: "منفذ", en: "Port" } },
+      { icon: "📦", visual: "packet", title: B("الحزمة (חבילה)", "חבילה (Packet)"),
+        text: B("المعلومات تسافر مقسّمة إلى حزم. على كل حزمة «ملصق» (Header): من أين (Source IP)، إلى أين (Destination IP)، وإلى أي منفذ.",
+                "המידע נוסע ברשת מחולק לחבילות. על כל חבילה יש «מדבקה» (Header): מאיפה (Source IP), לאן (Destination IP), ולאיזה פורט."),
+        term: { he: "חבילה / כותרת", ar: "حزمة / رأس", en: "Packet / Header" } },
+      { icon: "👮", title: B("الراوتر وقائمة ACL", "הנתב ורשימת ACL"),
+        text: B("الراوتر (נתב) مثل الحارس على البوابة. معه قائمة قواعد <b>ACL</b>: اسمح (permit) أو امنع (deny) حسب العنوان والمنفذ.",
+                "הנתב הוא כמו שומר בשער. יש לו רשימת חוקים <b>ACL</b>: לאפשר (permit) או לחסום (deny) לפי כתובת ופורט."),
+        term: { he: "רשימת בקרת גישה", ar: "قائمة التحكم بالوصول", en: "ACL" } },
+      { icon: "📜", visual: "acl", title: B("قواعد ACL الذهبية", "כללי הזהב של ACL"),
+        text: B("1️⃣ القواعد تُقرأ <b>من الأعلى للأسفل</b>.<br>2️⃣ أول قاعدة تتطابق تُنفَّذ وتتوقف القراءة.<br>3️⃣ في النهاية قاعدة خفية: <b>امنع الكل</b> (Implicit Deny).",
+                "1️⃣ החוקים נקראים <b>מלמעלה למטה</b>.<br>2️⃣ החוק הראשון שמתאים מתבצע והקריאה נעצרת.<br>3️⃣ בסוף יש חוק נסתר: <b>חסום הכול</b> (Implicit Deny)."),
+        term: { he: "Implicit Deny", ar: "المنع الضمني", en: "Implicit Deny" } }
+    ],
+    activities: [
+      { id: "iplookup", type: "iplookup", icon: "🗺️", title: B("محقق الـ IP والكرة الأرضية (API حقيقي)", "חוקר ה-IP והגלובוס (API אמיתי)"), desc: B("اكتشف أين يوجد خادم حقيقي في العالم ومن يملكه.", "גלו איפה נמצא שרת אמיתי בעולם ולמי הוא שייך.") },
+      { id: "acl", type: "acl", icon: "🚦", title: B("محاكي ACL في الراوتر", "סימולטור ACL בנתב"), desc: B("اكتب قواعد ACL وأرسل حزماً — وحلّ 3 مهمات.", "כתבו חוקי ACL, שלחו חבילות ופתרו 3 משימות.") }
+    ],
+    quiz: [
+      { q: B("أيّ عنوان IP صحيح؟", "איזו כתובת IP תקינה?"), options: [B("192.168.1.300", "192.168.1.300"), B("192.168.1.10", "192.168.1.10"), B("192.168.1", "192.168.1"), B("abc.def.1.2", "abc.def.1.2")], answer: 1, explain: B("4 أرقام، كل رقم 0–255.", "4 מספרים, כל אחד 0–255.") },
+      { q: B("ما منفذ المواقع الآمنة HTTPS؟", "מה הפורט של HTTPS?"), options: [B("23", "23"), B("53", "53"), B("80", "80"), B("443", "443")], answer: 3, explain: B("HTTPS = 443.", "HTTPS = 443.") },
+      { q: B("الراوتر يقرأ قواعد ACL:", "הנתב קורא את חוקי ה-ACL:"), options: [B("من الأسفل للأعلى", "מלמטה למעלה"), B("عشوائياً", "באקראי"), B("من الأعلى للأسفل ويتوقف عند أول تطابق", "מלמעלה למטה ועוצר בהתאמה הראשונה"), B("كلها معاً", "את כולם ביחד")], answer: 2, explain: B("أول تطابق يُنفَّذ.", "ההתאמה הראשונה מתבצעת.") },
+      { q: B("حزمة لم تتطابق مع أي قاعدة. ماذا يحدث؟", "חבילה שלא התאימה לאף חוק. מה קורה?"), options: [B("تمرّ", "עוברת"), B("تُمنع بسبب Implicit Deny", "נחסמת בגלל Implicit Deny"), B("تعود للمرسل", "חוזרת לשולח"), B("تنتظر", "מחכה")], answer: 1, explain: B("deny any ضمني في النهاية.", "בסוף יש deny any נסתר.") },
+      { q: B("العنوان 10.0.0.5 هو عنوان:", "הכתובת 10.0.0.5 היא:"), options: [B("عام (ציבורית)", "ציבורית"), B("خاص (פרטית)", "פרטית"), B("غير صالح", "לא תקינה"), B("عنوان DNS", "כתובת DNS")], answer: 1, explain: B("العناوين التي تبدأ بـ 10 خاصة.", "כתובות שמתחילות ב-10 הן פרטיות.") }
+    ]
+  },
+
+  // ======================= المرحلة 5 =======================
+  {
+    id: 5, icon: "🔎", color: "#eab308",
+    title: B("DNS وحماية المنافذ", "DNS ואבטחת פורטים"),
+    badge: { icon: "🧭", name: B("خبير الشبكات", "מומחה הרשתות") },
+    goal: B("تفهم كيف يتحول اسم الموقع إلى IP، وتفكّك حزمة DNS إلى طبقات، وتحمي منافذ السويتش (מתג) بأوامر حقيقية.",
+            "תבינו איך שם אתר הופך ל-IP, תפרקו חבילת DNS לשכבות, ותגנו על פורטים במתג בפקודות אמיתיות."),
+    slides: [
+      { icon: "📒", visual: "dns", title: B("DNS = دفتر هواتف الإنترنت", "DNS = ספר הטלפונים של האינטרנט"),
+        text: B("أنت تكتب <code>gov.il</code> لكن الحاسوب يحتاج IP. الـ DNS يترجم الاسم إلى عنوان، مثل دفتر الهاتف الذي يترجم «ماما» إلى رقم.",
+                "אתם כותבים <code>gov.il</code> אבל המחשב צריך IP. ה-DNS מתרגם שם לכתובת, כמו אנשי הקשר שמתרגמים «אמא» למספר."),
+        term: { he: "שרת שמות מתחם", ar: "نظام أسماء النطاقات", en: "DNS" } },
+      { icon: "📋", title: B("سجلات DNS", "רשומות DNS"),
+        text: B("<b>A</b> = الاسم ← عنوان IPv4.<br><b>CNAME</b> = اسم مستعار يشير لاسم آخر.<br><b>TTL</b> = كم ثانية نحفظ الجواب قبل أن نسأل من جديد.",
+                "<b>A</b> = שם ← כתובת IPv4.<br><b>CNAME</b> = כינוי שמפנה לשם אחר.<br><b>TTL</b> = כמה שניות שומרים את התשובה לפני ששואלים שוב."),
+        term: { he: "רשומת DNS", ar: "سجل DNS", en: "DNS Record" } },
+      { icon: "🎂", visual: "osi", title: B("طبقات الشبكة (OSI) — مثل الكعكة", "שכבות הרשת (OSI) — כמו עוגה"),
+        text: B("كل حزمة ملفوفة بطبقات:<br><b>7</b> التطبيق: سؤال DNS<br><b>4</b> النقل: UDP منفذ 53<br><b>3</b> الشبكة: IP<br><b>2</b> الربط: عناوين MAC",
+                "כל חבילה עטופה בשכבות:<br><b>7</b> יישום: שאילתת DNS<br><b>4</b> תעבורה: UDP פורט 53<br><b>3</b> רשת: IP<br><b>2</b> קו: כתובות MAC"),
+        term: { he: "מודל השכבות OSI", ar: "نموذج طبقات OSI", en: "OSI Model" } },
+      { icon: "🔌", title: B("السويتش (מתג)", "מתג (Switch)"),
+        text: B("جهاز فيه منافذ كثيرة نوصل بها حواسيب المدرسة بالكوابل. كل جهاز له عنوان MAC فريد مثل رقم الهوية.",
+                "מכשיר עם הרבה פורטים שאליהם מחברים בכבלים את מחשבי בית הספר. לכל מכשיר כתובת MAC ייחודית, כמו תעודת זהות."),
+        term: { he: "מתג", ar: "مبدّل / سويتش", en: "Switch" } },
+      { icon: "🚫", title: B("حماية المنافذ Port Security", "אבטחת פורטים"),
+        text: B("ماذا لو وصل شخص حاسوبه في منفذ فارغ؟ نحدد لكل منفذ: جهاز واحد فقط (maximum 1)، وإذا جاء جهاز غريب يُغلق المنفذ (violation shutdown).",
+                "מה אם מישהו יחבר מחשב לפורט פנוי? מגדירים לכל פורט: מכשיר אחד בלבד (maximum 1), ואם מגיע מכשיר זר — הפורט נסגר (violation shutdown)."),
+        term: { he: "אבטחת פורטים", ar: "حماية المنافذ", en: "Port Security" } },
+      { icon: "⌨️", visual: "cli", title: B("أوامر Cisco الأساسية", "פקודות Cisco בסיסיות"),
+        text: B("<code>enable</code> ← <code>configure terminal</code> ← <code>interface fa0/3</code> ← <code>shutdown</code> / <code>no shutdown</code><br><code>switchport mode access</code><br><code>switchport port-security</code>",
+                "<code>enable</code> ← <code>configure terminal</code> ← <code>interface fa0/3</code> ← <code>shutdown</code> / <code>no shutdown</code><br><code>switchport mode access</code><br><code>switchport port-security</code>"),
+        term: { he: "ממשק שורת פקודה", ar: "واجهة الأوامر", en: "CLI" } }
+    ],
+    activities: [
+      { id: "dns", type: "dns", icon: "🧅", title: B("مفكّك حزم DNS (API حقيقي)", "מפרק חבילות DNS (API אמיתי)"), desc: B("اسأل Google DNS عن موقع حقيقي وشاهد الجواب مفككاً إلى طبقات.", "שאלו את Google DNS על אתר אמיתי וראו את התשובה מפורקת לשכבות.") },
+      { id: "switch", type: "switch", icon: "🔓", title: B("غرفة الهروب: المنفذ المتمرّد", "חדר בריחה: הפורט הסורר"), desc: B("أوقف المهاجم وأمّن السويتش بأوامر CLI حقيقية.", "עצרו את התוקף ואבטחו את המתג בפקודות CLI אמיתיות.") }
+    ],
+    quiz: [
+      { q: B("ما وظيفة DNS؟", "מה התפקיד של DNS?"), options: [B("تشفير الرسائل", "הצפנת הודעות"), B("ترجمة اسم الموقع إلى عنوان IP", "תרגום שם אתר לכתובת IP"), B("حجب الفيروسات", "חסימת וירוסים"), B("تسريع الحاسوب", "האצת המחשב")], answer: 1, explain: B("دفتر هواتف الإنترنت.", "ספר הטלפונים של האינטרנט.") },
+      { q: B("ما المنفذ التقليدي لـ DNS؟", "מהו הפורט הרגיל של DNS?"), options: [B("UDP 53", "UDP 53"), B("TCP 80", "TCP 80"), B("TCP 443", "TCP 443"), B("TCP 23", "TCP 23")], answer: 0, explain: B("UDP 53.", "UDP 53.") },
+      { q: B("سجل DNS من نوع A يعطينا:", "רשומת DNS מסוג A נותנת:"), options: [B("اسماً مستعاراً", "כינוי"), B("عنوان IPv4", "כתובת IPv4"), B("كلمة سر", "סיסמה"), B("عنوان MAC", "כתובת MAC")], answer: 1, explain: B("A = اسم ← IPv4.", "A = שם ← IPv4.") },
+      { q: B("أيّ أمر يغلق المنفذ في السويتش؟", "איזו פקודה סוגרת פורט במתג?"), options: [B("no shutdown", "no shutdown"), B("shutdown", "shutdown"), B("enable", "enable"), B("exit", "exit")], answer: 1, explain: B("shutdown يغلق، no shutdown يفتح.", "shutdown סוגר, no shutdown פותח.") },
+      { q: B("ماذا يفعل switchport port-security maximum 1؟", "מה עושה switchport port-security maximum 1?"), options: [B("يسمح بجهاز واحد فقط", "מאפשר מכשיר אחד בלבד"), B("يغلق كل المنافذ", "סוגר את כל הפורטים"), B("يسرّع المنفذ", "מאיץ את הפורט"), B("يحذف الإعدادات", "מוחק הגדרות")], answer: 0, explain: B("عنوان MAC واحد فقط.", "כתובת MAC אחת בלבד.") }
+    ]
+  }
+];
+
+// ===================== بنك أسئلة الاختبار النهائي =====================
+const FINAL_BANK = [
+  { q: B("أي مبدأ يتضرر عندما يقرأ شخص غير مخوّل ملف علامات؟", "איזה עיקרון נפגע כשמישהו לא מורשה קורא קובץ ציונים?"), options: ["סודיות", "שלמות", "זמינות", "גיבוי"], answer: 0 },
+  { q: B("هجوم DDoS يضرب أساساً مبدأ:", "מתקפת DDoS פוגעת בעיקר ב:"), options: ["סודיות", "שלמות", "זמינות", "הצפנה"], answer: 2 },
+  { q: B("تغيير رسالة في الطريق بين المرسل والمستقبل يضرب:", "שינוי הודעה בדרך בין השולח למקבל פוגע ב:"), options: ["זמינות", "שלמות", "סודיות", B("لا شيء", "כלום")], answer: 1 },
+  { q: B("برنامج ينتشر وحده عبر الشبكة بدون أن يفتحه أحد:", "נוזקה שמתפשטת לבד ברשת בלי שמישהו יפתח אותה:"), options: ["תולעת", "וירוס", "כופרה", "Cookie"], answer: 0 },
+  { q: B("رسالة «حسابك سيغلق خلال ساعة، اضغط هنا» هي غالباً:", "הודעה «החשבון ייסגר תוך שעה, לחץ כאן» היא כנראה:"), options: [B("تحديث رسمي", "עדכון רשמי"), "פישינג", "גיבוי", "DNS"], answer: 1 },
+  { q: B("أفضل حماية إضافية لحساب الإنستغرام:", "ההגנה הנוספת הטובה ביותר לחשבון אינסטגרם:"), options: [B("كلمة سر قصيرة", "סיסמה קצרה"), "אימות דו-שלבי", B("مشاركة الكود مع صديق", "לשתף קוד עם חבר"), B("إيقاف التحديثات", "לכבות עדכונים")], answer: 1 },
+  { q: B("المهاجم الذي يتظاهر بأنه الدعم الفني يستخدم:", "תוקף שמתחזה לתמיכה טכנית משתמש ב:"), options: ["הנדסה חברתית", "ACL", "Hash", "Port Security"], answer: 0 },
+  { q: B("الخاصية الأهم في دالة Hash:", "התכונה החשובה ביותר של Hash:"), options: [B("يمكن فكّها بالمفتاح", "אפשר לפתוח עם מפתח"), B("باتجاه واحد — لا يمكن الرجوع للنص", "חד-כיוונית — אי אפשר לחזור לטקסט"), B("تعطي طولاً عشوائياً", "אורך אקראי"), B("للصور فقط", "רק לתמונות")], answer: 1 },
+  { q: B("طول ناتج SHA-1 بالأحرف (Hex):", "אורך הפלט של SHA-1 בתווי Hex:"), options: ["32", "40", "64", "8"], answer: 1 },
+  { q: B("شيفرة قيصر بإزاحة 3: النص HI يصبح:", "צופן קיסר בהזזה 3: הטקסט HI הופך ל:"), options: ["KL", "IJ", "GH", "LM"], answer: 0 },
+  { q: B("لماذا تحفظ المواقع الـ Hash بدل كلمة السر؟", "למה אתרים שומרים Hash במקום סיסמה?"), options: [B("لأنه أقصر", "כי הוא קצר יותר"), B("حتى لو سُرقت قاعدة البيانات لا تُكشف كلمات السر مباشرة", "כדי שגם אם המאגר נגנב, הסיסמאות לא ייחשפו ישירות"), B("لأنه أجمل", "כי הוא יפה יותר"), B("لا سبب", "אין סיבה")], answer: 1 },
+  { q: B("في Pwned Passwords، كم حرفاً من البصمة نرسل؟", "ב-Pwned Passwords, כמה תווים מה-Hash שולחים?"), options: ["5", "10", "40", B("لا شيء", "אף אחד")], answer: 0 },
+  { q: B("أيّ عنوان IP غير صالح؟", "איזו כתובת IP לא תקינה?"), options: ["10.0.0.1", "172.16.5.4", "192.168.1.256", "8.8.8.8"], answer: 2 },
+  { q: B("المنفذ 23 يستخدم لـ:", "פורט 23 משמש ל:"), options: ["HTTPS", "Telnet", "DNS", "SSH"], answer: 1 },
+  { q: B("المنفذ 22 يستخدم لـ:", "פורט 22 משמש ל:"), options: ["SSH", "HTTP", "DNS", "Telnet"], answer: 0 },
+  { q: B("لماذا نفضّل SSH على Telnet؟", "למה מעדיפים SSH על Telnet?"), options: [B("SSH أسرع", "SSH מהיר יותר"), B("SSH مشفّر و-Telnet نص مكشوف", "SSH מוצפן ו-Telnet שולח טקסט גלוי"), B("Telnet أحدث", "Telnet חדש יותר"), B("لا فرق", "אין הבדל")], answer: 1 },
+  { q: B("ACL: deny host 10.0.0.66 ثم permit any. حزمة من 10.0.0.66:", "ACL: deny host 10.0.0.66 ואז permit any. חבילה מ-10.0.0.66:"), options: [B("تمرّ", "עוברת"), B("تُمنع", "נחסמת"), B("تُمنع ثم تمرّ", "נחסמת ואז עוברת"), B("تعود", "חוזרת")], answer: 1 },
+  { q: B("ACL: permit any ثم deny host 10.0.0.66. حزمة من 10.0.0.66:", "ACL: permit any ואז deny host 10.0.0.66. חבילה מ-10.0.0.66:"), options: [B("تُمنع", "נחסמת"), B("تمرّ — لأن القاعدة الأولى تطابقت", "עוברת — כי החוק הראשון התאים"), B("تتوقف", "נעצרת"), B("خطأ", "שגיאה")], answer: 1 },
+  { q: B("ACL فيه فقط: permit host 192.168.1.10. حزمة من 192.168.1.20:", "ב-ACL יש רק: permit host 192.168.1.10. חבילה מ-192.168.1.20:"), options: [B("تمرّ", "עוברת"), B("تُمنع بسبب Implicit Deny", "נחסמת בגלל Implicit Deny"), B("تمرّ ببطء", "עוברת לאט"), B("تذهب لـ DNS", "הולכת ל-DNS")], answer: 1 },
+  { q: B("ماذا يعني Inbound ACL؟", "מה פירוש Inbound ACL?"), options: [B("فحص الحزم الداخلة للراوتر من هذا المنفذ", "בדיקת חבילות שנכנסות לנתב מהממשק"), B("فحص الحزم الخارجة", "בדיקת חבילות יוצאות"), B("حذف القواعد", "מחיקת חוקים"), B("تشفير الحزم", "הצפנת חבילות")], answer: 0 },
+  { q: B("الجهاز الذي يوجّه الحزم بين شبكات مختلفة:", "המכשיר שמנתב חבילות בין רשתות שונות:"), options: ["מתג", "נתב", "מדפסת", "שרת DNS"], answer: 1 },
+  { q: B("سجل CNAME هو:", "רשומת CNAME היא:"), options: ["IPv6", B("اسم مستعار يشير لاسم آخر", "כינוי שמפנה לשם אחר"), "TTL", "MAC"], answer: 1 },
+  { q: B("TTL في جواب DNS يعني:", "TTL בתשובת DNS פירושו:"), options: [B("عدد المستخدمين", "מספר משתמשים"), B("كم ثانية يُحفظ الجواب", "כמה שניות שומרים את התשובה"), B("سرعة الإنترنت", "מהירות האינטרנט"), B("رقم المنفذ", "מספר הפורט")], answer: 1 },
+  { q: B("في أي طبقة OSI يوجد رقم المنفذ؟", "באיזו שכבת OSI נמצא מספר הפורט?"), options: ["2", "3", "4", "7"], answer: 2 },
+  { q: B("في أي طبقة OSI يوجد عنوان IP؟", "באיזו שכבת OSI נמצאת כתובת ה-IP?"), options: ["2", "3", "4", "7"], answer: 1 },
+  { q: B("أي أمر يفتح منفذاً مغلقاً في السويتش؟", "איזו פקודה פותחת פורט סגור במתג?"), options: ["shutdown", "no shutdown", "enable", "show"], answer: 1 },
+  { q: B("قبل تفعيل port-security يجب أن يكون المنفذ:", "לפני הפעלת port-security הפורט חייב להיות:"), options: ["trunk", "access", "dynamic", "off"], answer: 1 },
+  { q: B("violation shutdown تعني:", "violation shutdown פירושו:"), options: [B("إغلاق المنفذ عند وصول جهاز غير مسموح", "סגירת הפורט כשמתחבר מכשיר לא מורשה"), B("إطفاء السويتش", "כיבוי המתג"), B("حذف عناوين MAC", "מחיקת כתובות MAC"), B("إرسال بريد", "שליחת מייל")], answer: 0 },
+  { q: B("الانتقال من Switch> إلى Switch# بالأمر:", "המעבר מ-Switch> ל-Switch# בפקודה:"), options: ["configure terminal", "enable", "interface", "exit"], answer: 1 },
+  { q: B("أفضل طريقة لاسترجاع الملفات بعد برنامج فدية:", "הדרך הטובה לשחזר קבצים אחרי כופרה:"), options: ["גיבוי", B("الدفع للمهاجم", "לשלם לתוקף"), B("إعادة تشغيل", "הפעלה מחדש"), B("حذف البريد", "מחיקת המייל")], answer: 0 }
+];
+
+const MATCH_PAIRS = [
+  { he: "סודיות", def: B("فقط المسموح لهم يرون المعلومة", "רק מורשים רואים את המידע") },
+  { he: "שלמות", def: B("المعلومة لا تتغيّر بدون إذن", "המידע לא משתנה בלי הרשאה") },
+  { he: "זמינות", def: B("المعلومة متاحة وقت الحاجة", "המידע זמין כשצריך") },
+  { he: "פישינג", def: B("رسالة مزيفة لسرقة كلمة السر", "הודעה מזויפת לגניבת סיסמה") },
+  { he: "גיבוב (Hash)", def: B("بصمة باتجاه واحد لا يمكن عكسها", "טביעת אצבע חד-כיוונית") },
+  { he: "Implicit Deny", def: B("منع كل ما لم تسمح به القواعد", "חסימת כל מה שלא הותר בחוקים") }
+];
+
+const GLOSSARY = [
+  ["מידע", "معلومات", "Information"], ["אבטחת מידע", "أمن المعلومات", "Information Security"],
+  ["סודיות", "سرّية", "Confidentiality"], ["שלמות", "سلامة المعلومة", "Integrity"], ["זמינות", "توفّر", "Availability"],
+  ["נוזקה", "برنامج ضار", "Malware"], ["וירוס", "فيروس", "Virus"], ["תולעת", "دودة", "Worm"],
+  ["סוס טרויאני", "حصان طروادة", "Trojan"], ["כופרה", "برنامج فدية", "Ransomware"],
+  ["פישינג / דיוג", "تصيّد احتيالي", "Phishing"], ["הנדסה חברתית", "هندسة اجتماعية", "Social Engineering"],
+  ["אימות דו-שלבי", "تحقق بخطوتين", "2FA"], ["גיבוי", "نسخ احتياطي", "Backup"], ["עדכון תוכנה", "تحديث البرامج", "Patch / Update"],
+  ["אנטי-וירוס", "مضاد فيروسات", "Antivirus"], ["סיסמה", "كلمة سر", "Password"], ["הרשאות", "صلاحيات", "Permissions"],
+  ["הצפנה", "تشفير", "Encryption"], ["פענוח", "فك التشفير", "Decryption"], ["מפתח", "مفتاح", "Key"],
+  ["צופן קיסר", "شيفرة قيصر", "Caesar cipher"], ["גיבוב", "تجزئة / بصمة", "Hash"],
+  ["כתובת IP", "عنوان IP", "IP Address"], ["פורט", "منفذ", "Port"], ["חבילה", "حزمة", "Packet"],
+  ["נתב", "راوتر / موجّه", "Router"], ["מתג", "سويتش / مبدّل", "Switch"],
+  ["רשימת בקרת גישה", "قائمة التحكم بالوصول", "ACL"], ["חומת אש", "جدار ناري", "Firewall"],
+  ["שרת", "خادم", "Server"], ["שם מתחם", "اسم نطاق", "Domain name"],
+  ["כתובת MAC", "عنوان MAC", "MAC Address"], ["אבטחת פורטים", "حماية المنافذ", "Port Security"]
+];
+
+</script>
+  <script>
+// =====================================================
+//  التطبيق الرئيسي — ثنائي اللغة (عربي / עברית)
+// =====================================================
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const PASS_STAGE = 60, PASS_FINAL = 70;
+
+// ---------------- التخزين ----------------
+const KEY = "infosec-lomda-v2";
+let DB = { students: {}, current: null, lang: "ar" };
+try { DB = Object.assign(DB, JSON.parse(localStorage.getItem(KEY)) || {}); } catch (e) {}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch (e) {} }
+
+// ---------------- اللغة ----------------
+const T = x => (x && typeof x === "object" && "ar" in x) ? x[DB.lang] : x;
+const L = (ar, he) => DB.lang === "he" ? he : ar;
+function setLang(l) {
+  DB.lang = l; if (me()) me().lang = l; save();
+  document.documentElement.lang = l === "he" ? "he" : "ar";
+  document.body.classList.toggle("lang-he", l === "he");
+  document.title = L("لومدة أمن المعلومات — אבטחת מידע", "לומדת אבטחת מידע — כיתות י'–י\"א");
+  route();
+}
+
+function me() { return DB.current ? DB.students[DB.current] : null; }
+function stageState(id) {
+  const s = me(); s.stages[id] = s.stages[id] || { slides: false, acts: {}, quiz: null, done: false };
+  return s.stages[id];
+}
+function addPoints(n, why) { const s = me(); s.points += n; save(); toast(`+${n} ⭐ ${why || ""}`); renderTop(); }
+function isUnlocked(id) { return id === 1 || stageState(id - 1).done; }
+function allStagesDone() { return STAGES.every(st => stageState(st.id).done); }
+function stagePercent(st) {
+  const ss = stageState(st.id); const total = 2 + st.activities.length;
+  const d = (ss.slides ? 1 : 0) + st.activities.filter(a => ss.acts[a.id]).length + (ss.quiz != null && ss.quiz >= PASS_STAGE ? 1 : 0);
+  return Math.round(d / total * 100);
+}
+function checkStageDone(st) {
+  const ss = stageState(st.id);
+  if (ss.done) return;
+  if (ss.slides && st.activities.every(a => ss.acts[a.id]) && ss.quiz != null && ss.quiz >= PASS_STAGE) {
+    ss.done = true; save(); confetti();
+    addPoints(50, L("أنهيت المرحلة!", "סיימת את השלב!"));
+    const last = st.id >= STAGES.length;
+    setTimeout(() => modal(`<div style="text-align:center"><div style="font-size:80px">${st.badge.icon}</div><h2>${L("مبروك يا", "כל הכבוד,")} ${esc(DB.current)}!</h2>
+      <p>${L(`أنهيت المرحلة ${st.id} وحصلت على شارة`, `סיימת את שלב ${st.id} וקיבלת את התג`)} <b>«${T(st.badge.name)}»</b></p>
+      <button onclick="closeModal();go('${last ? "final" : "stage-" + (st.id + 1)}')">${last ? L("إلى الاختبار النهائي 🏆", "למבחן המסכם 🏆") : L("إلى المرحلة التالية ←", "לשלב הבא ←")}</button></div>`), 600);
+  }
+}
+function markAct(st, actId) {
+  const ss = stageState(st.id);
+  if (!ss.acts[actId]) { ss.acts[actId] = true; save(); addPoints(20, L("نشاط مكتمل", "פעילות הושלמה")); checkStageDone(st); renderTabsOnly && renderTabsOnly(); }
+}
+
+// ---------------- أدوات واجهة ----------------
+function toast(msg) { const t = document.createElement("div"); t.className = "toast"; t.innerHTML = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 2200); }
+function modal(html) {
+  closeModal();
+  const m = document.createElement("div"); m.id = "modal";
+  m.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:900;display:flex;align-items:center;justify-content:center;padding:20px";
+  m.innerHTML = `<div class="card" style="max-width:600px;width:100%;max-height:90vh;overflow:auto;animation:popIn .4s both">${html}</div>`;
+  m.addEventListener("click", e => { if (e.target === m) closeModal(); });
+  document.body.appendChild(m);
+}
+function closeModal() { const m = $("#modal"); if (m) m.remove(); }
+function confetti() {
+  const c = document.createElement("canvas"); c.id = "confetti"; document.body.appendChild(c);
+  c.width = innerWidth; c.height = innerHeight; const x = c.getContext("2d");
+  const cols = ["#38bdf8", "#22c55e", "#facc15", "#a78bfa", "#f97316", "#ef4444"];
+  const P = Array.from({ length: 160 }, () => ({ x: Math.random() * c.width, y: -20 - Math.random() * c.height / 2, r: 4 + Math.random() * 6, vy: 2 + Math.random() * 4, vx: -2 + Math.random() * 4, c: cols[Math.random() * 6 | 0], a: Math.random() * 6 }));
+  let f = 0; (function loop() { x.clearRect(0, 0, c.width, c.height); P.forEach(p => { p.y += p.vy; p.x += p.vx; p.a += .1; x.fillStyle = p.c; x.save(); x.translate(p.x, p.y); x.rotate(p.a); x.fillRect(-p.r / 2, -p.r / 2, p.r, p.r * 1.6); x.restore(); }); if (++f < 200) requestAnimationFrame(loop); else c.remove(); })();
+}
+function speak(text, lang) {
+  lang = lang || DB.lang;
+  if (!("speechSynthesis" in window)) return toast(L("المتصفح لا يدعم القراءة الصوتية", "הדפדפן לא תומך בהקראה"));
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text.replace(/<[^>]+>/g, " "));
+  const v = speechSynthesis.getVoices().find(v => v.lang.startsWith(lang === "he" ? "he" : "ar") || (lang === "he" && v.lang.startsWith("iw")));
+  if (v) u.voice = v; u.lang = lang === "he" ? "he-IL" : "ar-SA"; u.rate = .9;
+  speechSynthesis.speak(u);
+}
+const langSwitch = () => `<div class="langsw"><button class="${DB.lang === "ar" ? "on" : ""}" onclick="setLang('ar')">العربية</button><button class="${DB.lang === "he" ? "on" : ""}" onclick="setLang('he')">עברית</button></div>`;
+
+// ---------------- الشريط العلوي ----------------
+function renderTop() {
+  const s = me(); const bar = $("#top");
+  if (!s) { bar.innerHTML = `<div class="brand">🛡️ ${L("أمن المعلومات", "אבטחת מידע")}</div><div class="sp"></div>${langSwitch()}`; return; }
+  const done = STAGES.filter(st => stageState(st.id).done).length;
+  bar.innerHTML = `<div class="brand" onclick="go('home')">🛡️ ${L("أمن المعلومات", "אבטחת מידע")} <small class="hide-sm">י'–י"א</small></div>
+    <div class="sp"></div>
+    <span class="navlink" onclick="go('glossary')">📖 ${L("القاموس", "מילון")}</span>
+    <span class="navlink hide-sm" onclick="go('teacher')">👩‍🏫 ${L("لوحة المعلم", "לוח המורה")}</span>
+    <span class="pill">⭐ ${s.points}</span>
+    <span class="pill hide-sm">🏅 ${done}/${STAGES.length}</span>
+    <span class="pill">👤 ${esc(DB.current)}</span>
+    ${langSwitch()}
+    <span class="navlink" onclick="logout()">${L("خروج", "יציאה")}</span>`;
+}
+function logout() { DB.current = null; save(); go("home"); }
+
+// ---------------- التوجيه ----------------
+let currentTab = {};
+let renderTabsOnly = null;
+let cleanupActivity = null;
+function go(h) { if (location.hash === "#" + h) route(); else location.hash = h; }
+window.addEventListener("hashchange", route);
+function route() {
+  if (window.speechSynthesis) speechSynthesis.cancel();
+  if (cleanupActivity) { try { cleanupActivity(); } catch (e) {} cleanupActivity = null; }
+  renderTop();
+  const h = location.hash.replace("#", "") || "home";
+  const main = $("#main"); scrollTo(0, 0);
+  if (!me()) return renderLogin(main);
+  if (h.startsWith("stage-")) { const id = +h.split("-")[1]; const st = STAGES.find(s => s.id === id); if (st && isUnlocked(id)) return renderStage(main, st); }
+  if (h === "final") return allStagesDone() ? renderFinal(main) : (toast(L("🔒 أنهِ كل المراحل أولاً", "🔒 קודם מסיימים את כל השלבים")), renderHome(main));
+  if (h === "glossary") return renderGlossary(main);
+  if (h === "teacher") return renderTeacher(main);
+  renderHome(main);
+}
+
+// ---------------- تسجيل الدخول ----------------
+function renderLogin(main) {
+  const names = Object.keys(DB.students);
+  main.innerHTML = `<div class="login card">
+    <div class="shield">🛡️</div>
+    <p style="margin:0 0 6px">🌐 اختر اللغة · בחרו שפה</p>
+    <div class="biglang"><button class="${DB.lang === "ar" ? "on" : ""}" onclick="setLang('ar')">العربية</button><button class="${DB.lang === "he" ? "on" : ""}" onclick="setLang('he')">עברית</button></div>
+    <h1>${L("أهلاً بك في رحلة أمن المعلومات", "ברוכים הבאים למסע אבטחת המידע")}</h1>
+    <p class="muted">${L("5 مراحل + اختبار نهائي. في كل مرحلة: عرض متحرك، محاكاة وألعاب، واختبار قصير. تقدّمك يُحفظ باسمك.",
+                        "5 שלבים + מבחן מסכם. בכל שלב: מצגת מונפשת, סימולציות ומשחקים, ובוחן קצר. ההתקדמות נשמרת לפי השם שלך.")}</p>
+    <form id="lf"><input id="nm" placeholder="${L("اكتب اسمك الكامل هنا", "כתבו כאן את השם המלא")}" maxlength="40" autocomplete="off"><button style="width:100%;font-size:20px">${L("ابدأ الرحلة 🚀", "יוצאים לדרך 🚀")}</button></form>
+    ${names.length ? `<p class="muted" style="margin-top:20px">${L("أو تابع باسمك:", "או המשיכו עם השם שלכם:")}</p><div class="known">${names.map(n => `<button class="ghost small" data-n="${esc(n)}">👤 ${esc(n)}</button>`).join("")}</div>` : ""}
+  </div>`;
+  $("#lf").onsubmit = e => {
+    e.preventDefault(); const n = $("#nm").value.trim().replace(/\s+/g, " ");
+    if (n.length < 2) return toast(L("اكتب اسمك من فضلك ✍️", "כתבו את השם בבקשה ✍️"));
+    login(n);
+  };
+  $$("[data-n]").forEach(b => b.onclick = () => login(b.dataset.n));
+}
+function login(n) {
+  if (!DB.students[n]) DB.students[n] = { created: Date.now(), points: 0, stages: {}, final: null, lang: DB.lang };
+  DB.current = n; DB.students[n].last = Date.now(); save(); go("home");
+}
+
+// ---------------- الصفحة الرئيسية ----------------
+function renderHome(main) {
+  const s = me();
+  const total = STAGES.reduce((a, st) => a + stagePercent(st), 0) / STAGES.length;
+  const finalOpen = allStagesDone();
+  main.innerHTML = `
+    <div class="hero card">
+      <div class="big">👋</div>
+      <div style="flex:1;min-width:240px">
+        <h1>${L("مرحباً", "שלום")} ${esc(DB.current)}!</h1>
+        <div class="muted">${L("تقدّمك:", "ההתקדמות שלך:")} <b>${Math.round(total)}%</b> · ${L("نقاطك:", "נקודות:")} <b>${s.points}</b> ⭐</div>
+        <div class="progressbar" style="margin-top:8px"><div style="width:${total}%"></div></div>
+      </div>
+      <div class="badges">${STAGES.map(st => `<div class="badge ${stageState(st.id).done ? "" : "off"}">${st.badge.icon} ${T(st.badge.name)}</div>`).join("")}
+        <div class="badge ${s.final && s.final.passed ? "" : "off"}">🏆 ${L("بطل الأمن السيبراني", "אלוף הסייבר")}</div></div>
+    </div>
+    <h2>🗺️ ${L("خريطة المراحل", "מפת השלבים")}</h2>
+    <div class="path">
+      ${STAGES.map(st => {
+        const un = isUnlocked(st.id), ss = stageState(st.id), p = stagePercent(st);
+        return `<div class="stagecard ${un ? "" : "locked"} ${ss.done ? "done" : ""}" style="border-top:6px solid ${st.color}" onclick="${un ? `go('stage-${st.id}')` : `toast('${L("🔒 أنهِ المرحلة السابقة أولاً", "🔒 קודם מסיימים את השלב הקודם")}')`}">
+          <div class="num">${st.id}</div>
+          <div class="ic">${un ? st.icon : "🔒"}</div>
+          <h3>${L("المرحلة", "שלב")} ${st.id}: ${T(st.title)}</h3>
+          <div class="muted" style="font-size:15px">${st.activities.map(a => a.icon + " " + T(a.title).replace(/\(.*?\)/, "")).join("<br>")}</div>
+          <div class="status">${ss.done ? L("✅ مكتملة", "✅ הושלם") : un ? (p ? `⏳ ${p}%` : L("▶️ ابدأ الآن", "▶️ מתחילים")) : L("🔒 مغلقة", "🔒 נעול")}</div>
+          <div class="mini"><div style="width:${p}%;background:${st.color}"></div></div>
+        </div>`;
+      }).join("")}
+      <div class="stagecard ${finalOpen ? "" : "locked"} ${s.final && s.final.passed ? "done" : ""}" style="border-top:6px solid #ef4444" onclick="${finalOpen ? "go('final')" : `toast('${L("🔒 يُفتح بعد إنهاء المراحل الخمس", "🔒 נפתח אחרי חמשת השלבים")}')`}">
+        <div class="num">🏁</div><div class="ic">${finalOpen ? "🏆" : "🔒"}</div>
+        <h3>${L("الاختبار النهائي والمهام", "מבחן מסכם ומשימות")}</h3>
+        <div class="status">${s.final ? `${L("أفضل علامة:", "ציון הכי גבוה:")} <b>${s.final.best}</b> ${s.final.passed ? "✅" : ""}` : finalOpen ? L("▶️ جاهز!", "▶️ מוכן!") : L("🔒 مغلق", "🔒 נעול")}</div>
+      </div>
+    </div>`;
+}
+
+// ---------------- صفحة المرحلة ----------------
+function renderStage(main, st) {
+  const tab = currentTab[st.id] || "slides";
+  main.innerHTML = `
+    <div class="stagehead">
+      <div class="ic">${st.icon}</div>
+      <div style="flex:1;min-width:230px"><div class="muted">${L("المرحلة", "שלב")} ${st.id} ${L("من", "מתוך")} ${STAGES.length}</div>
+        <h1 style="margin:0">${T(st.title)}</h1></div>
+      <button class="ghost" onclick="go('home')">${L("→ الخريطة", "→ למפה")}</button>
+    </div>
+    <div class="card" style="margin-bottom:14px">🎯 <b>${L("هدف المرحلة:", "מטרת השלב:")}</b> ${T(st.goal)}</div>
+    <div class="tabs" id="tabs"></div>
+    <div id="tabbody"></div>`;
+  renderTabsOnly = () => {
+    const ss = stageState(st.id); const t = currentTab[st.id] || "slides";
+    const actsDone = st.activities.every(a => ss.acts[a.id]);
+    if (!$("#tabs")) return;
+    $("#tabs").innerHTML = `
+      <button class="tab ${t === "slides" ? "on" : ""}" data-t="slides">🎬 1. ${L("العرض المتحرك", "מצגת מונפשת")} ${ss.slides ? '<span class="ok">✔</span>' : ""}</button>
+      <button class="tab ${t === "acts" ? "on" : ""}" data-t="acts">🎮 2. ${L("المحاكاة والأنشطة", "סימולציות ופעילויות")} (${st.activities.filter(a => ss.acts[a.id]).length}/${st.activities.length}) ${actsDone ? '<span class="ok">✔</span>' : ""}</button>
+      <button class="tab ${t === "quiz" ? "on" : ""}" data-t="quiz">📝 3. ${L("اختبار قصير", "בוחן קצר")} ${ss.quiz != null ? `(${ss.quiz})` : ""} ${ss.quiz >= PASS_STAGE ? '<span class="ok">✔</span>' : ""}</button>
+      ${ss.done ? `<span class="pill" style="border-color:var(--green)">✅ ${L("المرحلة مكتملة", "השלב הושלם")} ${st.badge.icon}</span>` : ""}`;
+    $$("#tabs [data-t]").forEach(b => b.onclick = () => { currentTab[st.id] = b.dataset.t; route(); });
+  };
+  renderTabsOnly();
+  const body = $("#tabbody");
+  if (tab === "slides") renderDeck(body, st);
+  else if (tab === "acts") renderActivities(body, st);
+  else renderQuiz(body, st.quiz, score => {
+    const ss = stageState(st.id); const first = ss.quiz == null || ss.quiz < PASS_STAGE;
+    ss.quiz = Math.max(ss.quiz || 0, score); save();
+    if (score >= PASS_STAGE && first) addPoints(Math.round(score / 10) * 3, L("اجتزت الاختبار", "עברת את הבוחן"));
+    renderTabsOnly(); checkStageDone(st);
+  }, { pass: PASS_STAGE, stage: st });
+}
+
+// ---------------- رسومات الشرائح ----------------
+function visualHTML(k) {
+  switch (k) {
+    case "info": return `<div class="v-flow"><span>📸</span><span>💬</span><span>📊</span><span>🔑</span><span>🏦</span></div>`;
+    case "conf": return `<div class="v-flow"><div>📄<span class="lab">${L("علامتك", "הציון")}</span></div><span class="arrow">⟵</span><div>🔒</div><span class="arrow">⟵</span><div>👨‍🏫<span class="lab">${L("المعلم فقط", "רק המורה")}</span></div></div>`;
+    case "integ": return `<div class="v-flow"><div style="font-size:40px">55</div><span class="arrow">✏️</span><div style="font-size:40px;color:var(--red);text-decoration:line-through">95</div></div>`;
+    case "avail": return `<div class="v-flow"><div>💻</div><span class="arrow">⇢</span><div>🌐<span class="lab" style="color:var(--red)">503 ✖</span></div></div>`;
+    case "cia": return `<div class="v-cia"><svg viewBox="0 0 300 260"><polygon points="150,20 280,240 20,240" fill="none" stroke="#38bdf8" stroke-width="4" stroke-dasharray="700" stroke-dashoffset="700"><animate attributeName="stroke-dashoffset" from="700" to="0" dur="1.5s" fill="freeze"/></polygon><text x="150" y="170" text-anchor="middle" fill="#facc15" font-size="40" font-weight="900">CIA</text></svg>
+      <div class="lbl" style="top:-6px;left:105px;animation-delay:.6s">🔒 סודיות</div><div class="lbl" style="bottom:-6px;left:-6px;animation-delay:1s">✍️ שלמות</div><div class="lbl" style="bottom:-6px;right:-6px;animation-delay:1.4s">⏰ זמינות</div></div>`;
+    case "malware": return `<div class="v-flow"><div>🦠<span class="lab">וירוס</span></div><div>🪱<span class="lab">תולעת</span></div><div>🐴<span class="lab">טרויאני</span></div><div>💰<span class="lab">כופרה</span></div></div>`;
+    case "phish": return `<div class="v-flow"><div>🎣</div><span class="arrow">⟵</span><div>📧</div><span class="arrow">⟵</span><div>🐟</div></div>`;
+    case "encrypt": return `<div class="v-flow" style="direction:ltr"><code>HELLO</code><span class="arrow">🔑→</span><code>X7#q!</code><span class="arrow">🔑→</span><code>HELLO</code></div>`;
+    case "caesar": { const p = "ABCDEFG", c = "DEFGHIJ"; return `<div class="v-caesar">${[...p].map(l => `<div class="p">${l}</div>`).join("")}${[...c].map((l, i) => `<div class="c" style="animation-delay:${.3 + i * .12}s">${l}</div>`).join("")}</div>`; }
+    case "hash": return `<div class="v-hash"><div class="in">"password"</div><div class="mach">🧃</div><div class="out">5BAA61E4C9B93F3F0682250B6CF8331B7EE68FD8</div></div>`;
+    case "kanon": return `<div class="v-flow" style="font-size:34px;direction:ltr"><div>💻<span class="lab">5BAA6</span></div><span class="arrow">⇢</span><div>🗄️<span class="lab">500 hash</span></div><span class="arrow">⇠</span><div>🔍<span class="lab">local</span></div></div>`;
+    case "ip": return `<div><div class="v-ip"><span>192</span><i>.</i><span style="animation-delay:.2s">168</span><i>.</i><span style="animation-delay:.4s">1</span><i>.</i><span style="animation-delay:.6s">10</span></div><div class="muted" style="text-align:center;margin-top:8px">4 × (0–255)</div></div>`;
+    case "ports": return `<div class="v-flow" style="font-size:16px;direction:ltr">${[["80", "🌐"], ["443", "🔒"], ["53", "📒"], ["22", "🖥️"], ["23", "⚠️"]].map(([p, i], k) => `<div style="background:#0a1020;border-radius:12px;padding:8px 12px;animation:popIn .4s ${k * .15}s both;text-align:center"><div style="font-size:30px">${i}</div><b>${p}</b></div>`).join("")}</div>`;
+    case "packet": return `<div class="v-packet"><div class="h">📦 Header</div><div style="animation-delay:.2s">Src IP: 192.168.1.10</div><div style="animation-delay:.4s">Dst IP: 142.250.75.14</div><div style="animation-delay:.6s">Dst Port: 443</div><div style="animation-delay:.8s;color:var(--muted)">Data: ...</div></div>`;
+    case "acl": return `<div class="v-acl"><div class="d">10 deny host 10.0.0.66</div><div style="animation-delay:.3s">20 permit any eq 80</div><div style="animation-delay:.6s">30 permit any eq 443</div><div class="d imp" style="animation-delay:.9s">(deny any — implicit)</div></div>`;
+    case "dns": return `<div class="v-flow" style="font-size:36px;direction:ltr"><div>💻<span class="lab">gov.il ?</span></div><span class="arrow">⇢</span><div>📒<span class="lab">DNS</span></div><span class="arrow">⇢</span><div style="font-size:18px"><code>147.237.0.71</code></div></div>`;
+    case "osi": return `<div class="v-osi">${[["7 · Application — DNS", "#7c3aed"], ["4 · Transport — UDP 53", "#2563eb"], ["3 · Network — IP", "#059669"], ["2 · Data Link — MAC", "#b45309"]].map(([t, c], i) => `<div style="background:${c};animation-delay:${i * .2}s;direction:ltr">${t}</div>`).join("")}</div>`;
+    case "cli": return `<div class="v-term"><div>Switch&gt; enable</div><div style="animation-delay:1s">Switch# conf t</div><div style="animation-delay:2s">Switch(config)# int fa0/3</div><div style="animation-delay:3s">Switch(config-if)# shutdown</div></div>`;
+    default: return "";
+  }
+}
+
+// ---------------- العرض المتحرك ----------------
+function renderDeck(body, st) {
+  let i = 0, playing = false, timer = null, t0 = 0;
+  const DUR = 11000;
+  body.innerHTML = `<div class="deck" id="deck"><div class="timer" id="dtimer"></div><div id="slidebox"></div>
+    <div class="controls">
+      <button class="ghost small" id="prev">${L("→ السابق", "→ הקודם")}</button>
+      <button class="small" id="play">▶ ${L("تشغيل كفيديو", "הפעל כסרטון")}</button>
+      <button class="speak small" id="say">🔊</button>
+      <div class="dots" id="dots"></div>
+      <button class="small" id="next">${L("التالي ←", "הבא ←")}</button>
+    </div></div>
+    <p class="muted" style="text-align:center">💡 ${L("اضغط «تشغيل كفيديو» لتتحرك الشرائح وحدها مع القراءة الصوتية. شاهد حتى النهاية لتكمل هذا الجزء.", "לחצו «הפעל כסרטון» והשקפים יתקדמו לבד עם הקראה. צפו עד הסוף כדי להשלים את החלק הזה.")}</p>`;
+  const show = () => {
+    const s = st.slides[i];
+    $("#slidebox").innerHTML = `<div class="slide">
+      <div class="slidebody"><div class="txt"><div class="sicon">${s.icon}</div><h2>${T(s.title)}</h2><div class="stext">${T(s.text)}</div>
+      ${s.term ? `<div class="term"><span>📌</span><span class="he">${s.term.he}</span><span>${s.term.ar}</span><span class="en">${s.term.en}</span><button class="speak small" onclick="speak('${s.term.he}','he')">🔊</button></div>` : ""}</div>
+      ${s.visual ? `<div class="vis">${visualHTML(s.visual)}</div>` : ""}</div></div>`;
+    $("#dots").innerHTML = st.slides.map((_, k) => `<span class="dot ${k === i ? "on" : ""}" data-k="${k}"></span>`).join("");
+    $$("#dots .dot").forEach(d => d.onclick = () => { i = +d.dataset.k; show(); });
+    $("#prev").disabled = i === 0;
+    $("#next").textContent = i === st.slides.length - 1 ? L("✔ إنهاء العرض", "✔ סיום המצגת") : L("التالي ←", "הבא ←");
+    t0 = performance.now();
+    if (playing) speak(T(s.title) + ". " + T(s.text));
+  };
+  const finish = () => {
+    stop(); const ss = stageState(st.id);
+    if (!ss.slides) { ss.slides = true; save(); addPoints(10, L("شاهدت العرض", "צפית במצגת")); renderTabsOnly(); checkStageDone(st); }
+    $("#slidebox").innerHTML = `<div class="slide" style="text-align:center;padding-top:40px"><div class="sicon">🎉</div><h2>${L("أحسنت! أنهيت العرض", "כל הכבוד! סיימת את המצגת")}</h2>
+      <p class="stext" style="margin:auto">${L("الآن وقت المحاكاة والتجربة.", "עכשיו הזמן לסימולציות ולניסויים.")}</p><br><button onclick="currentTab[${st.id}]='acts';route()">🎮 ${L("إلى المحاكاة", "לסימולציות")}</button>
+      <button class="ghost" id="again">↻ ${L("شاهد مرة أخرى", "צפה שוב")}</button></div>`;
+    $("#again").onclick = () => { i = 0; show(); };
+  };
+  const next = () => { if (i < st.slides.length - 1) { i++; show(); } else finish(); };
+  const tick = () => { if (!playing) return; const p = (performance.now() - t0) / DUR; const tm = $("#dtimer"); if (!tm) return stop(); tm.style.width = Math.min(100, p * 100) + "%"; if (p >= 1) next(); if (playing) timer = requestAnimationFrame(tick); };
+  const stop = () => { playing = false; cancelAnimationFrame(timer); if (window.speechSynthesis) speechSynthesis.cancel(); $("#play") && ($("#play").textContent = "▶ " + L("تشغيل كفيديو", "הפעל כסרטון")); $("#dtimer") && ($("#dtimer").style.width = 0); };
+  $("#prev").onclick = () => { if (i > 0) { i--; show(); } };
+  $("#next").onclick = next;
+  $("#play").onclick = () => { if (playing) return stop(); playing = true; $("#play").textContent = "⏸ " + L("إيقاف", "עצור"); show(); tick(); };
+  $("#say").onclick = () => { const s = st.slides[i]; speak(T(s.title) + ". " + T(s.text)); };
+  cleanupActivity = stop;
+  show();
+}
+
+// ---------------- الاختبار القصير ----------------
+function renderQuiz(body, questions, onDone, opts = {}) {
+  const qs = shuffle(questions).map(q => { const order = shuffle(q.options.map((o, k) => k)); return { ...q, options: order.map(k => q.options[k]), answer: order.indexOf(q.answer) }; });
+  let i = 0, right = 0; const marks = [];
+  const draw = () => {
+    if (i >= qs.length) {
+      const score = Math.round(right / qs.length * 100); onDone && onDone(score, right, qs.length);
+      if (opts.next) return opts.next(right, qs.length);
+      const ok = score >= (opts.pass || PASS_STAGE);
+      body.innerHTML = `<div class="card result"><div style="font-size:70px">${ok ? "🎉" : "💪"}</div><div class="score" style="color:${ok ? "var(--green)" : "var(--orange)"}">${score}</div>
+        <p style="font-size:20px">${right} / ${qs.length}. ${ok ? L("ممتاز! نجحت.", "מצוין! עברת.") : L(`تحتاج ${opts.pass || PASS_STAGE} على الأقل — راجع العرض وحاول مرة أخرى، أنت قادر!`, `צריך לפחות ${opts.pass || PASS_STAGE} — חזרו על המצגת ונסו שוב, אתם יכולים!`)}</p>
+        <button id="retry">↻ ${L("اختبار من جديد", "בוחן חדש")}</button> ${!ok && opts.stage ? `<button class="ghost" onclick="currentTab[${opts.stage.id}]='slides';route()">🎬 ${L("راجع العرض", "חזרה למצגת")}</button>` : ""}</div>`;
+      $("#retry").onclick = () => renderQuiz(body, questions, onDone, opts);
+      return;
+    }
+    const q = qs[i];
+    body.innerHTML = `<div class="card quiz"><div class="qprog">${qs.map((_, k) => `<span class="${marks[k] || (k === i ? "c" : "")}"></span>`).join("")}</div>
+      <div class="muted">${L("سؤال", "שאלה")} ${i + 1} / ${qs.length}</div><div class="qtitle">${T(q.q)}</div>
+      <div class="options">${q.options.map((o, k) => `<button class="opt" data-k="${k}">${T(o)}</button>`).join("")}</div><div id="fb"></div></div>`;
+    $$(".opt", body).forEach(b => b.onclick = () => {
+      const k = +b.dataset.k, ok = k === q.answer;
+      $$(".opt", body).forEach(x => { x.disabled = true; if (+x.dataset.k === q.answer) x.classList.add("right"); });
+      if (!ok) b.classList.add("wrong"); else right++;
+      marks[i] = ok ? "r" : "w";
+      $("#fb").innerHTML = `<div class="feedback ${ok ? "good" : "bad"}">${ok ? L("✅ صحيح!", "✅ נכון!") : L("❌ ليس تماماً.", "❌ לא בדיוק.")} ${T(q.explain) || ""}<br><br><button id="nq">${i === qs.length - 1 ? L("النتيجة 🏁", "לתוצאה 🏁") : L("السؤال التالي ←", "השאלה הבאה ←")}</button></div>`;
+      $("#nq").onclick = () => { i++; draw(); };
+    });
+  };
+  draw();
+}
+
+// ---------------- القاموس ----------------
+function renderGlossary(main) {
+  main.innerHTML = `<h1>📖 ${L("قاموس المصطلحات", "מילון מושגים")}</h1><p class="muted">${L("اضغط 🔊 لتسمع النطق بالعبرية.", "לחצו 🔊 כדי לשמוע את ההגייה.")}</p>
+    <input id="gq" placeholder="${L("ابحث…", "חיפוש…")}" style="width:100%;margin-bottom:12px">
+    <div class="card"><table class="t"><thead><tr><th>עברית</th><th>العربية</th><th>English</th><th></th></tr></thead><tbody id="gb"></tbody></table></div>`;
+  const draw = f => $("#gb").innerHTML = GLOSSARY.filter(r => !f || r.join(" ").toLowerCase().includes(f.toLowerCase())).map(r => `<tr><td style="font-weight:800;color:var(--yellow)">${r[0]}</td><td>${r[1]}</td><td style="direction:ltr;text-align:right">${r[2]}</td><td><button class="speak small" onclick="speak('${r[0]}','he')">🔊</button></td></tr>`).join("");
+  draw(""); $("#gq").oninput = e => draw(e.target.value);
+}
+
+// ---------------- لوحة المعلم ----------------
+function renderTeacher(main) {
+  const rows = Object.entries(DB.students).map(([n, s]) => ({ n, s, st: STAGES.map(x => (s.stages[x.id] && s.stages[x.id].done) ? "✅" : (s.stages[x.id] && s.stages[x.id].quiz != null ? s.stages[x.id].quiz : "—")) }));
+  main.innerHTML = `<h1>👩‍🏫 ${L("لوحة المعلم", "לוח המורה")}</h1>
+    <p class="muted">${L("تعرض كل الطلاب الذين استخدموا الموقع على هذا الجهاز. (✅ = مرحلة مكتملة، رقم = علامة الاختبار القصير)", "מציג את כל התלמידים שהשתמשו באתר במכשיר הזה. (✅ = שלב הושלם, מספר = ציון הבוחן)")}</p>
+    <div class="card" style="overflow:auto"><table class="t"><thead><tr><th>${L("الطالب", "תלמיד")}</th>${STAGES.map(s => `<th>${s.icon} ${s.id}</th>`).join("")}<th>${L("النهائي", "מסכם")}</th><th>⭐</th><th>${L("آخر دخول", "כניסה אחרונה")}</th></tr></thead>
+    <tbody>${rows.map(r => `<tr><td><b>${esc(r.n)}</b></td>${r.st.map(x => `<td>${x}</td>`).join("")}<td>${r.s.final ? r.s.final.best + (r.s.final.passed ? " ✅" : "") : "—"}</td><td>${r.s.points}</td><td>${r.s.last ? new Date(r.s.last).toLocaleString(DB.lang === "he" ? "he-IL" : "ar") : ""}</td></tr>`).join("") || `<tr><td colspan="9">—</td></tr>`}</tbody></table></div>
+    <div class="row" style="margin-top:14px"><button id="csv">📋 ${L("نسخ الجدول (CSV) لـ Excel", "העתקת הטבלה (CSV) לאקסל")}</button><button class="red" id="wipe">🗑️ ${L("حذف كل البيانات", "מחיקת כל הנתונים")}</button></div>
+    <div id="wipebox"></div>`;
+  $("#csv").onclick = async () => {
+    const csv = [L("الطالب", "תלמיד") + "," + STAGES.map(s => "S" + s.id).join(",") + ",Final,Points"].concat(rows.map(r => [r.n, ...r.st, r.s.final ? r.s.final.best : "", r.s.points].join(","))).join("\n");
+    try { await navigator.clipboard.writeText(csv); toast(L("✅ تم النسخ — الصقه في Excel", "✅ הועתק — הדביקו באקסל")); } catch (e) { modal(`<textarea style="width:100%;height:200px">${esc(csv)}</textarea>`); }
+  };
+  $("#wipe").onclick = () => { $("#wipebox").innerHTML = `<div class="card" style="margin-top:10px;border-color:var(--red)">${L("هل أنت متأكد؟", "בטוחים?")} <button class="red small" id="yes">${L("نعم، احذف", "כן, למחוק")}</button></div>`; $("#yes").onclick = () => { DB = { students: {}, current: null, lang: DB.lang }; save(); go("home"); }; };
+}
+
+window.addEventListener("DOMContentLoaded", () => { document.body.classList.toggle("lang-he", DB.lang === "he"); document.documentElement.lang = DB.lang; route(); });
+
+</script>
+  <script>
+// =====================================================
+//  المحاكاة والأنشطة التفاعلية — ثنائية اللغة
+// =====================================================
+function renderActivities(body, st) {
+  const ss = stageState(st.id);
+  const cur = currentTab["act" + st.id] || (st.activities.find(a => !ss.acts[a.id]) || st.activities[0]).id;
+  body.innerHTML = `<div class="actpills">${st.activities.map(a => `<button class="actpill ${a.id === cur ? "on" : ""}" data-a="${a.id}" title="${esc(T(a.desc))}">
+      <span class="ic">${a.icon}</span><span>${T(a.title)}</span>${ss.acts[a.id] ? '<span class="done">✅</span>' : ""}</button>`).join("")}</div><div id="actbody"></div>`;
+  $$("[data-a]", body).forEach(b => b.onclick = () => { currentTab["act" + st.id] = b.dataset.a; route(); });
+  const act = st.activities.find(a => a.id === cur);
+  ACT[act.type]($("#actbody"), st, act);
+  // كل المهمة في شاشة واحدة: ننزل تلقائياً حتى تبدأ المهمة من أعلى الشاشة
+  setTimeout(() => { const b = $(".actpills"); if (b) b.scrollIntoView({ block: "start", behavior: "smooth" }); }, 60);
+}
+const ACT = {};
+const prog = (n, i) => `<div class="qprog">${Array.from({ length: n }, (_, k) => `<span class="${k < i ? "r" : k === i ? "c" : ""}"></span>`).join("")}</div>`;
+
+// ================== المرحلة 1: محاكاة مدير الأمن ==================
+ACT.ciasim = (box, st, act) => {
+  const TOOLS = {
+    perm: { i: "🔑", n: B("كلمة سر قوية + صلاحيات", "סיסמה חזקה + הרשאות"), p: "c" },
+    enc: { i: "🔐", n: B("تشفير", "הצפנה"), p: "c" },
+    hash: { i: "🧾", n: B("فحص سلامة (Hash)", "בדיקת שלמות (Hash)"), p: "i" },
+    backup: { i: "💾", n: B("نسخة احتياطية", "גיבוי"), p: "i" },
+    fw: { i: "🧱", n: B("جدار ناري (تصفية)", "חומת אש (סינון)"), p: "a" },
+    spare: { i: "🖥️", n: B("خادم احتياطي", "שרת גיבוי"), p: "a" }
+  };
+  const NAMES = { c: "סודיות 🔒", i: "שלמות ✍️", a: "זמינות ⏰" };
+  const ev = shuffle(st.ciasim); let i = 0, saved = 0, timer = null, tleft = 0;
+  const meters = { c: 100, i: 100, a: 100 };
+  box.innerHTML = `<div class="card cia">
+    <div class="ciatop"><b>🏫 ${L("مركز الأمن — مدرسة السلام", "מרכז האבטחה — בית ספר השלום")}</b><div class="meters" id="meters"></div><span class="pill" id="cscore">🛡️ 0</span></div>
+    <div class="ciagrid"><div>
+      <div class="arena" id="arena"><div class="srv">🏫<span>${L("خادم المدرسة", "שרת בית הספר")}</span></div><div class="att" id="att">❓</div><div class="flash" id="flash"></div></div>
+      <div class="tbar"><div id="tbar"></div></div>
+      <div class="evcard" id="evcard"></div>
+    </div><div>
+      <div class="tools" id="tools">${Object.entries(TOOLS).map(([k, t]) => `<button class="ghost" data-tool="${k}"><span style="font-size:26px">${t.i}</span><span>${T(t.n)}</span></button>`).join("")}</div>
+      <div class="hint small">💡 ${L("ماذا يريد المهاجم؟ أن <b>يرى</b> (סודיות)، أن <b>يغيّر</b> (שלמות)، أم أن <b>يوقف</b> الخدمة (זמינות)؟", "מה התוקף רוצה? <b>לראות</b> (סודיות), <b>לשנות</b> (שלמות), או <b>להשבית</b> (זמינות)?")}</div>
+    </div></div></div>`;
+  const drawMeters = () => $("#meters").innerHTML = Object.entries(meters).map(([k, v]) => `<div class="meterbox"><div class="row" style="justify-content:space-between;gap:6px"><b>${NAMES[k]}</b><span>${v}%</span></div><div class="meter"><div style="width:${v}%;background:${v > 60 ? "var(--green)" : v > 30 ? "var(--yellow)" : "var(--red)"}"></div></div></div>`).join("");
+  const stopT = () => { clearInterval(timer); timer = null; };
+  const next = () => {
+    stopT();
+    if (i >= ev.length) {
+      $("#tools").style.display = "none"; $("#att").style.display = "none";
+      $("#evcard").innerHTML = `<div style="text-align:center"><span style="font-size:40px">${saved >= 6 ? "🏆" : "💪"}</span><h3 style="margin:0">${L(`صددت ${saved} من ${ev.length} هجمات`, `עצרת ${saved} מתוך ${ev.length} מתקפות`)}</h3>
+        <p>${saved >= 6 ? L("أنت مدير أمن ممتاز! المدرسة بأمان.", "אתם מנהלי אבטחה מצוינים! בית הספר מוגן.") : L("تذكّر: لكل نوع هجوم أداة مناسبة. حاول مرة أخرى!", "זכרו: לכל סוג מתקפה יש כלי מתאים. נסו שוב!")}</p><button id="again">↻ ${L("مرة أخرى", "שוב")}</button></div>`;
+      $("#again").onclick = () => ACT.ciasim(box, st, act);
+      markAct(st, act.id); return;
+    }
+    const e = ev[i];
+    $$("[data-tool]", box).forEach(b => { b.disabled = false; b.classList.remove("good", "bad"); });
+    const att = $("#att"); att.textContent = e.icon; att.style.transition = "none"; att.style.insetInlineStart = "2%"; att.classList.remove("boom");
+    $("#evcard").className = "evcard";
+    $("#evcard").innerHTML = `<div><span class="muted">${L("هجوم", "מתקפה")} ${i + 1}/${ev.length}</span><div style="font-size:20px;font-weight:700">🚨 ${T(e.t)}</div></div>`;
+    tleft = 100;
+    requestAnimationFrame(() => { att.style.transition = "inset-inline-start 12s linear"; att.style.insetInlineStart = "72%"; });
+    $("#tbar").style.width = "100%";
+    timer = setInterval(() => { tleft -= 100 / 120; $("#tbar").style.width = Math.max(0, tleft) + "%"; if (tleft <= 0) answer(null); }, 100);
+  };
+  const answer = tool => {
+    if (!timer) return; stopT();
+    const e = ev[i], ok = tool && e.ok.includes(tool);
+    $$("[data-tool]", box).forEach(b => { b.disabled = true; if (e.ok.includes(b.dataset.tool)) b.classList.add("good"); });
+    const att = $("#att"); const cs = getComputedStyle(att).insetInlineStart; att.style.transition = "none"; att.style.insetInlineStart = cs;
+    if (ok) { saved++; att.classList.add("boom"); $("#flash").className = "flash shield"; }
+    else { meters[e.hit] = Math.max(0, meters[e.hit] - 25); $("#flash").className = "flash hit"; if (tool) $(`[data-tool=${tool}]`, box).classList.add("bad"); }
+    setTimeout(() => { const f = $("#flash"); if (f) f.className = "flash"; }, 700);
+    drawMeters(); $("#cscore").textContent = "🛡️ " + saved;
+    const right = e.ok.map(k => TOOLS[k].i + " " + T(TOOLS[k].n)).join(L(" أو ", " או "));
+    $("#evcard").className = "evcard " + (ok ? "good" : "bad");
+    $("#evcard").innerHTML = `<div><b>${ok ? L("🛡️ تم صد الهجوم!", "🛡️ המתקפה נעצרה!") : tool ? L("💥 الأداة غير مناسبة!", "💥 הכלי לא מתאים!") : L("⏰ انتهى الوقت!", "⏰ הזמן נגמר!")}</b>
+      ${L("الهجوم يضرب", "המתקפה פוגעת ב")} <b>${NAMES[e.hit]}</b>. ${L("الصحيح:", "הכלי הנכון:")} <b>${right}</b></div><button id="nxt">${L("التالي ←", "הבאה ←")}</button>`;
+    $("#nxt").onclick = () => { i++; next(); };
+  };
+  $$("[data-tool]", box).forEach(b => b.onclick = () => answer(b.dataset.tool));
+  drawMeters(); next();
+  cleanupActivity = stopT;
+};
+
+// ================== المرحلة 1: صنّف الحادثة ==================
+ACT.classify = (box, st, act) => {
+  const items = shuffle(st.classify); let i = 0, right = 0;
+  const OPTS = { c: ["🔒", "סודיות", L("سرّية", "Confidentiality")], i: ["✍️", "שלמות", L("سلامة", "Integrity")], a: ["⏰", "זמינות", L("توفّر", "Availability")] };
+  const draw = () => {
+    if (i >= items.length) {
+      box.innerHTML = `<div class="card result"><div style="font-size:60px">🧩</div><h2>${right} / ${items.length}</h2>
+        <p>${right >= 6 ? L("ممتاز! أنت تفهم مثلث CIA.", "מצוין! אתם מבינים את משולש CIA.") : L("تذكّر: من رأى؟ = סודיות، من غيّر؟ = שלמות، هل توقف؟ = זמינות.", "זכרו: מי ראה? = סודיות, מי שינה? = שלמות, מה הפסיק לעבוד? = זמינות.")}</p><button id="again">↻ ${L("مرة أخرى", "שוב")}</button></div>`;
+      $("#again").onclick = () => ACT.classify(box, st, act); markAct(st, act.id); return;
+    }
+    const it = items[i];
+    box.innerHTML = `<div class="card">${prog(items.length, i)}
+      <div class="muted">${L("أي مبدأ تم خرقه؟", "באיזה עיקרון פגעו?")}</div><div class="scenario">📰 ${T(it.text)}</div>
+      <div class="cia-btns">${Object.entries(OPTS).map(([k, v]) => `<button class="ghost" data-k="${k}"><span style="font-size:30px">${v[0]}</span><span style="font-size:22px">${v[1]}</span><span class="muted" style="font-size:14px">${v[2]}</span></button>`).join("")}</div><div id="fb"></div></div>`;
+    $$("[data-k]", box).forEach(b => b.onclick = () => {
+      const ok = b.dataset.k === it.answer; if (ok) right++;
+      $$("[data-k]", box).forEach(x => { x.disabled = true; if (x.dataset.k === it.answer) x.style.borderColor = "var(--green)"; });
+      if (!ok) b.style.borderColor = "var(--red)";
+      $("#fb").innerHTML = `<div class="feedback ${ok ? "good" : "bad"}">${ok ? L("✅ صحيح!", "✅ נכון!") : L("❌ لا.", "❌ לא.")} ${T(it.explain)}<br><br><button id="nx">${L("التالي ←", "הבא ←")}</button></div>`;
+      $("#nx").onclick = () => { i++; draw(); };
+    });
+  };
+  draw();
+};
+
+// ================== المرحلة 2: محاكاة صندوق البريد ==================
+ACT.inbox = (box, st, act) => {
+  const msgs = st.phish.map((m, k) => ({ ...m, k, state: null }));
+  let cur = null, fell = 0;
+  box.innerHTML = `<div class="card mailapp"><div class="mailtop">📬 SchoolMail · ${esc(DB.current)} <span class="muted" id="mstat"></span></div>
+    <div class="mailgrid"><div class="mlist" id="mlist"></div><div class="mview" id="mview"><div class="empty">👈 ${L("اختر رسالة لفتحها", "בחרו הודעה כדי לפתוח")}</div></div></div>
+    <div class="statusbar" id="sbar">🔗 —</div></div>
+    <div class="hint">💡 ${L("قبل الضغط على أي رابط: مرّر الماوس فوقه (أو اضغط 🔍) لترى <b>الرابط الحقيقي</b> في الشريط السفلي.", "לפני שלוחצים על קישור: העבירו עליו את העכבר (או לחצו 🔍) כדי לראות את <b>הכתובת האמיתית</b> בשורת המצב.")}</div>`;
+  const icon = m => m.state === "rep" ? "🚩" : m.state === "safe" ? "✅" : m.state === "fell" ? "🎣" : m.kind === "email" ? "📧" : m.kind === "chat" ? "💬" : "✉️";
+  const drawList = () => {
+    $("#mlist").innerHTML = msgs.map(m => `<div class="mitem ${m.state ? "" : "unread"} ${cur === m.k ? "on" : ""}" data-m="${m.k}"><span>${icon(m)}</span><div><div class="mf">${esc(T(m.from))}</div><div class="ms">${esc(T(m.subject))}</div></div></div>`).join("");
+    $$(".mitem", box).forEach(e => e.onclick = () => open(+e.dataset.m));
+    const done = msgs.filter(m => m.state).length;
+    $("#mstat").textContent = ` · ${done}/${msgs.length}`;
+    if (done === msgs.length) finish();
+  };
+  const linkHTML = m => m.link ? ` <a class="mlink" id="mlink" href="#" data-real="${m.link.real}">${esc(T(m.link.text))}</a> <button class="ghost small" id="peek">🔍</button>` : "";
+  const open = k => {
+    cur = k; const m = msgs[k]; drawList();
+    $("#mview").innerHTML = `<div class="mhead"><div><b>${L("من:", "מאת:")}</b> <span class="ltr">${esc(T(m.from))}</span></div><div><b>${L("الموضوع:", "נושא:")}</b> ${esc(T(m.subject))}</div></div>
+      <div class="mbody ${m.kind !== "email" ? "bubbly" : ""}">${T(m.body)}${linkHTML(m)}</div>
+      <div id="mres">${m.state ? verdict(m) : `<div class="row" style="margin-top:14px"><button class="red" id="rep">🚩 ${L("بلّغ: احتيال", "דווח: הונאה")}</button><button class="green" id="ok">✅ ${L("رسالة آمنة", "הודעה בטוחה")}</button></div>`}</div>`;
+    const ln = $("#mlink");
+    if (ln) {
+      const show = () => { $("#sbar").innerHTML = `🔗 ${L("الرابط الحقيقي:", "הכתובת האמיתית:")} <b class="ltr" style="color:${m.fake ? "var(--red)" : "var(--green)"}">${ln.dataset.real}</b>`; };
+      ln.onmouseenter = show; ln.onfocus = show; $("#peek").onclick = show;
+      ln.onmouseleave = () => { };
+      ln.onclick = e => { e.preventDefault(); clickLink(m); };
+    }
+    $("#rep") && ($("#rep").onclick = () => decide(m, true));
+    $("#ok") && ($("#ok").onclick = () => decide(m, false));
+  };
+  const verdict = m => {
+    const right = (m.state === "rep") === m.fake && m.state !== "fell";
+    return `<div class="feedback ${right ? "good" : "bad"}" style="margin-top:14px"><b>${m.state === "fell" ? L("🎣 وقعت في الفخ!", "🎣 נפלתם בפח!") : right ? L("✅ قرار صحيح!", "✅ החלטה נכונה!") : L("❌ قرار خاطئ!", "❌ החלטה שגויה!")}</b>
+      ${L("هذه الرسالة", "ההודעה הזו")} ${m.fake ? L("احتيال 🎣", "הונאה 🎣") : L("حقيقية ✅", "אמיתית ✅")}:<ul class="clues">${m.clues.map(c => `<li>${T(c)}</li>`).join("")}</ul></div>`;
+  };
+  const decide = (m, reported) => { m.state = reported ? "rep" : "safe"; if (reported === m.fake) toast(L("✅ أحسنت!", "✅ כל הכבוד!")); open(m.k); };
+  const clickLink = m => {
+    if (!m.fake) { toast(L("✅ رابط آمن — نفس العنوان المكتوب", "✅ קישור בטוח — אותה כתובת שכתובה")); return; }
+    $("#mview").innerHTML = `<div class="fakesite"><div class="fakeurl">⚠️ <span class="ltr">${m.link.real}</span></div>
+      <div style="padding:20px;text-align:center"><div style="font-size:40px">🔐</div><h3>${L("سجّل الدخول للمتابعة", "התחברו כדי להמשיך")}</h3>
+      <input placeholder="${L("اسم المستخدم", "שם משתמש")}" style="width:100%;margin:6px 0"><input type="password" placeholder="${L("كلمة السر", "סיסמה")}" style="width:100%;margin:6px 0">
+      ${/card|prize|pay/.test(m.link.real) ? `<input placeholder="💳 0000 0000 0000 0000" style="width:100%;margin:6px 0;direction:ltr">` : ""}
+      <button id="fsub" style="width:100%">${L("دخول", "כניסה")}</button><p class="muted" style="font-size:13px">🧪 ${L("هذه صفحة تدريب مزيفة داخل المحاكاة", "זה דף אימון מזויף בתוך הסימולציה")}</p></div></div>`;
+    $("#fsub").onclick = () => {
+      m.state = "fell"; fell++;
+      $("#mview").innerHTML = `<div class="feedback bad" style="font-size:19px;text-align:center"><div style="font-size:60px">🎣😱</div><b>${L("وقعت في الفخ!", "נפלתם בפח!")}</b><br>
+        ${L("في الواقع، المهاجم الآن يملك كلمة سرك. انظر إلى العنوان الحقيقي:", "במציאות, לתוקף יש עכשיו את הסיסמה שלכם. תסתכלו על הכתובת האמיתית:")} <code>${m.link.real}</code><br>
+        ${L("ماذا تفعل الآن؟ غيّر كلمة السر فوراً، فعّل אימות דו-שלבי، وأخبر المعلم.", "מה עושים עכשיו? מחליפים סיסמה מיד, מפעילים אימות דו-שלבי ומספרים למורה.")}<br><br><button id="back">${L("رجوع للبريد", "חזרה לדואר")}</button></div>`;
+      $("#back").onclick = () => open(m.k); drawList();
+    };
+  };
+  const finish = () => {
+    const good = msgs.filter(m => m.state !== "fell" && (m.state === "rep") === m.fake).length;
+    if (!$("#ibdone")) box.insertAdjacentHTML("beforeend", `<div class="card result" id="ibdone"><div style="font-size:50px">${good >= 5 ? "🕵️" : "💪"}</div><h2>${L(`قرارات صحيحة: ${good} من ${msgs.length}`, `החלטות נכונות: ${good} מתוך ${msgs.length}`)}</h2>
+      <p>${fell ? L(`وقعت في الفخ ${fell} مرة — تذكّر أن تفحص الرابط الحقيقي قبل الضغط!`, `נפלתם בפח ${fell} פעמים — זכרו לבדוק את הכתובת האמיתית לפני לחיצה!`) : L("لم تقع في أي فخ! 🦅", "לא נפלתם באף פח! 🦅")}</p><button id="again">↻ ${L("مرة أخرى", "שוב")}</button></div>`);
+    $("#again").onclick = () => ACT.inbox(box, st, act);
+    markAct(st, act.id);
+  };
+  drawList();
+};
+
+// ================== المرحلة 2: محاكاة انتشار البرامج الضارة ==================
+ACT.malsim = (box, st, act) => {
+  const N = 16; let pcs, running = false, timer = null, mission = 0, backupAtRun = false, lastType = null;
+  const DEF = { upd: false, av: false, fw: false, bk: false };
+  const MISS = [
+    B("مهمة 1: أطلق <b>الدودة</b> بدون أي حماية — وشاهد كم حاسوباً تصيب.", "משימה 1: שחררו <b>תולעת</b> בלי שום הגנה — וראו כמה מחשבים נדבקים."),
+    B("مهمة 2: شغّل أدوات حماية وأطلق <b>الدودة</b> مرة أخرى — اجعل الإصابات <b>4 أو أقل</b>.", "משימה 2: הפעילו כלי הגנה ושחררו שוב <b>תולעת</b> — הגיעו ל-<b>4 הדבקות או פחות</b>."),
+    B("مهمة 3: <b>برنامج فدية</b> يهاجم! بعد التشفير — استرجع كل الملفات بدون أن تدفع.", "משימה 3: <b>כופרה</b> תוקפת! אחרי ההצפנה — שחזרו את כל הקבצים בלי לשלם.")
+  ];
+  box.innerHTML = `<div class="card"><div class="mission" id="mmis"></div>
+    <div class="grid2"><div>
+      <h3>🦠 ${L("1. اختر البرنامج الضار", "1. בחרו נוזקה")}</h3>
+      <div class="row" id="mtype">${[["worm", "🪱 תולעת"], ["virus", "🦠 וירוס"], ["ransom", "💰 כופרה"]].map(([k, n]) => `<button class="ghost small" data-t="${k}">${n}</button>`).join("")}</div>
+      <h3 style="margin-top:14px">🛡️ ${L("2. شغّل الحماية", "2. הפעילו הגנות")}</h3>
+      <div class="defs">${[["upd", "🔄", B("تحديثات البرامج", "עדכוני תוכנה"), B("تسد الثغرات التي تستعملها الدودة", "סוגרים פרצות שהתולעת מנצלת")], ["av", "🧪", B("مضاد فيروسات", "אנטי-וירוס"), B("يكتشف وينظف الإصابات", "מזהה ומנקה הדבקות")], ["fw", "🧱", B("جدار ناري بين الغرف", "חומת אש בין הכיתות"), B("يقسم الشبكة لأجزاء", "מחלקת את הרשת לאזורים")], ["bk", "💾", B("نسخة احتياطية", "גיבוי"), B("نسخة من كل الملفات", "עותק של כל הקבצים")]].map(([k, i, n, d]) => `<label class="def"><input type="checkbox" data-d="${k}"> <span style="font-size:24px">${i}</span> <span><b>${T(n)}</b><br><small class="muted">${T(d)}</small></span></label>`).join("")}</div>
+      <div class="row" style="margin-top:12px"><button id="run" style="font-size:19px">▶ ${L("3. أطلق الهجوم", "3. הפעילו מתקפה")}</button><button class="ghost" id="rst">↺ ${L("شبكة جديدة", "רשת חדשה")}</button></div>
+    </div><div>
+      <div class="lan" id="lan"></div>
+      <div class="row" style="margin-top:8px;justify-content:space-between"><span id="mstat2" style="font-weight:800"></span><span class="muted" style="font-size:14px">💻 ${L("سليم", "תקין")} · 🦠 ${L("مصاب", "נדבק")} · 🔒 ${L("مشفّر", "מוצפן")} · 🛡️ ${L("محدّث", "מעודכן")}</span></div>
+      <div id="after"></div></div></div></div>`;
+  let type = "worm";
+  const setType = t => { type = t; $$("#mtype button").forEach(b => b.classList.toggle("sel", b.dataset.t === t)); };
+  $$("#mtype button").forEach(b => b.onclick = () => !running && setType(b.dataset.t));
+  $$("[data-d]", box).forEach(c => c.onchange = () => { DEF[c.dataset.d] = c.checked; if (!running) reset(); });
+  const room = k => Math.floor(k / 4);
+  const reset = () => {
+    const unpatched = new Set(shuffle([...Array(N).keys()].slice(1)).slice(0, 3)); unpatched.add(0);
+    pcs = Array.from({ length: N }, (_, k) => ({ s: "ok", patched: DEF.upd && !unpatched.has(k) }));
+    $("#after").innerHTML = ""; draw();
+  };
+  const draw = () => {
+    $("#lan").innerHTML = [0, 1, 2, 3].map(r => `<div class="room ${DEF.fw ? "walled" : ""}"><div class="rlab">${L("غرفة", "חדר")} ${r + 1}</div>${pcs.slice(r * 4, r * 4 + 4).map((p, j) => `<div class="pc ${p.s}">${p.s === "inf" ? "🦠" : p.s === "enc" ? "🔒" : "💻"}${p.patched ? '<i>🛡️</i>' : ""}${r * 4 + j === 0 ? `<b class="p0">📧</b>` : ""}</div>`).join("")}</div>`).join("");
+    const inf = pcs.filter(p => p.s !== "ok").length;
+    $("#mstat2").innerHTML = `${type === "ransom" ? "🔒" : "🦠"} ${inf}/${N} ${L("أُصيب", "נפגעו")}`;
+  };
+  const drawMission = () => { $("#mmis").innerHTML = mission < 3 ? `🎯 ${T(MISS[mission])}` : `🏆 ${L("أنهيت كل مهمات المحاكاة!", "סיימתם את כל משימות הסימולציה!")}`; $("#mmis").classList.toggle("ok", mission >= 3); };
+  const run = async () => {
+    if (running) return; reset(); running = true; $("#run").disabled = true; backupAtRun = DEF.bk; lastType = type;
+    pcs[0].s = type === "ransom" ? "enc" : "inf"; draw();
+    toast(L("📧 أحدهم فتح مرفقاً مشبوهاً في الحاسوب الأول…", "📧 מישהו פתח קובץ מצורף חשוד במחשב הראשון…"));
+    for (let tick = 0; tick < 10; tick++) {
+      await sleep(650);
+      const bad = pcs.map((p, k) => p.s !== "ok" ? k : -1).filter(k => k >= 0);
+      for (const k of bad) {
+        const tries = type === "virus" ? (Math.random() < .4 ? 1 : 0) : 2;
+        for (let t = 0; t < tries; t++) {
+          const cand = [...Array(N).keys()].filter(j => pcs[j].s === "ok" && (!DEF.fw || room(j) === room(k)));
+          if (!cand.length) break;
+          const j = cand[Math.random() * cand.length | 0];
+          if (type !== "virus" && pcs[j].patched) continue;
+          if (DEF.av && Math.random() < (type === "virus" ? .7 : .4)) continue;
+          pcs[j].s = type === "ransom" ? "enc" : "inf";
+        }
+      }
+      if (DEF.av && type !== "ransom") pcs.forEach((p, k) => { if (k && p.s === "inf" && Math.random() < .25) p.s = "ok"; });
+      draw();
+    }
+    running = false; $("#run").disabled = false;
+    const inf = pcs.filter(p => p.s !== "ok").length;
+    let msg = "";
+    if (type === "ransom") {
+      $("#after").innerHTML = `<div class="feedback bad" style="margin-top:10px">💰 ${L(`${inf} حواسيب مشفّرة! رسالة المهاجم: «ادفع 5 بيتكوين لتسترجع ملفاتك».`, `${inf} מחשבים מוצפנים! הודעת התוקף: «שלמו 5 ביטקוין כדי לקבל את הקבצים».`)}
+        <div class="row" style="margin-top:10px"><button class="green" id="restore">💾 ${L("استرجاع من النسخة الاحتياطية", "שחזור מגיבוי")}</button><button class="red" id="pay">💸 ${L("ادفع الفدية", "שלמו כופר")}</button></div><div id="rres"></div></div>`;
+      $("#restore").onclick = () => {
+        if (!backupAtRun) { $("#rres").innerHTML = `<p>😱 ${L("لا توجد نسخة احتياطية! الملفات ضاعت. شغّل 💾 قبل الهجوم وحاول مرة أخرى.", "אין גיבוי! הקבצים אבדו. הפעילו 💾 לפני המתקפה ונסו שוב.")}</p>`; return; }
+        pcs.forEach(p => p.s = "ok"); draw();
+        $("#after").innerHTML = `<div class="feedback good" style="margin-top:10px">✅ ${L("استرجعت كل الملفات بدون دفع! الגיבוי هو أفضل حماية من الכופרה.", "שחזרתם את כל הקבצים בלי לשלם! גיבוי הוא ההגנה הטובה ביותר מפני כופרה.")}</div>`;
+        if (mission === 2) { mission = 3; drawMission(); confetti(); markAct(st, act.id); }
+      };
+      $("#pay").onclick = () => $("#rres").innerHTML = `<p>💸 ${L("دفعت… والمهاجم اختفى ولم يرسل المفتاح. لا تدفع أبداً — اعمل גיבוי!", "שילמתם… והתוקף נעלם בלי לשלוח מפתח. לעולם לא משלמים — עושים גיבוי!")}</p>`;
+    } else {
+      msg = inf > 8 ? L(`😱 ${inf} حاسوباً أُصيب! بدون حماية الدودة تنتشر بسرعة كبيرة.`, `😱 ${inf} מחשבים נדבקו! בלי הגנה תולעת מתפשטת מהר מאוד.`) : inf <= 4 ? L(`🛡️ ممتاز! فقط ${inf} إصابات. الحماية أوقفت الانتشار.`, `🛡️ מצוין! רק ${inf} הדבקות. ההגנות עצרו את ההתפשטות.`) : L(`⚠️ ${inf} إصابات. جرّب حماية إضافية.`, `⚠️ ${inf} הדבקות. נסו הגנה נוספת.`);
+      if (type === "virus") msg += " " + L("(الفيروس أبطأ — ينتشر فقط عندما يفتح أحد ملفاً مصاباً.)", "(וירוס איטי יותר — מתפשט רק כשמישהו פותח קובץ נגוע.)");
+      $("#after").innerHTML = `<div class="feedback ${inf <= 4 ? "good" : "bad"}" style="margin-top:10px">${msg}</div>`;
+      const anyDef = DEF.upd || DEF.av || DEF.fw;
+      if (mission === 0 && type === "worm" && !anyDef) { mission = 1; drawMission(); toast(L("🎯 مهمة 1 أُنجزت", "🎯 משימה 1 הושלמה")); }
+      else if (mission === 1 && type === "worm" && inf <= 4) { mission = 2; drawMission(); setType("ransom"); toast(L("🎯 مهمة 2 أُنجزت", "🎯 משימה 2 הושלמה")); }
+    }
+  };
+  $("#run").onclick = run; $("#rst").onclick = () => !running && reset();
+  setType("worm"); reset(); drawMission();
+  cleanupActivity = () => { running = false; };
+};
+
+// ================== المرحلة 3: قوة كلمة السر ==================
+ACT.strength = (box, st, act) => {
+  const common = ["123456", "password", "12345678", "qwerty", "111111", "123123", "abc123", "iloveyou", "admin", "000000", "1234567890"];
+  box.innerHTML = `<div class="card"><h3>💪 ${L("مقياس قوة كلمة السر", "מד חוזק סיסמה")}</h3><p class="muted">⚠️ ${L("لا تكتب كلمة سرك الحقيقية!", "אל תכתבו את הסיסמה האמיתית שלכם!")}</p>
+    <input id="pw" style="width:100%;direction:ltr;font-size:22px" placeholder="type a password..." autocomplete="off">
+    <div class="meter"><div id="mbar" style="width:0"></div></div><div id="mlabel" style="font-weight:800;font-size:20px">—</div>
+    <div id="crack" class="muted"></div><div class="checks" id="checks" style="margin-top:10px"></div>
+    <div class="hint">🎯 ${L("المهمة: اصنع كلمة سر تصل إلى «قوية جداً». جرّب جملة مثل", "המשימה: הגיעו ל«חזקה מאוד». נסו משפט כמו")} <code>${L("Ana-Bahib-Falafel-7!", "Ani-Ohev-Falafel-7!")}</code></div></div>`;
+  const inp = $("#pw");
+  const upd = () => {
+    const p = inp.value;
+    const c = [[p.length >= 12, L("12 حرفاً أو أكثر", "12 תווים ומעלה")], [/[a-z]/.test(p), L("حرف صغير a-z", "אות קטנה a-z")], [/[A-Z]/.test(p), L("حرف كبير A-Z", "אות גדולה A-Z")], [/\d/.test(p), L("رقم 0-9", "ספרה 0-9")], [/[^A-Za-z0-9]/.test(p), L("رمز ! @ # -", "סימן ! @ # -")], [p && !common.includes(p.toLowerCase()), L("ليست من الكلمات المشهورة", "לא סיסמה נפוצה")]];
+    let score = c.filter(x => x[0]).length; if (p.length < 8) score = Math.min(score, 2); if (common.includes(p.toLowerCase())) score = 0;
+    const pool = (/[a-z]/.test(p) ? 26 : 0) + (/[A-Z]/.test(p) ? 26 : 0) + (/\d/.test(p) ? 10 : 0) + (/[^A-Za-z0-9]/.test(p) ? 33 : 0);
+    const secs = common.includes(p.toLowerCase()) ? 0 : Math.pow(pool || 1, p.length) / 1e10;
+    const human = secs < 1 ? L("أقل من ثانية 😱", "פחות משנייה 😱") : secs < 3600 ? Math.round(secs / 60) + L(" دقيقة", " דקות") : secs < 86400 * 365 ? Math.round(secs / 86400) + L(" يوم", " ימים") : secs < 1e9 * 31536000 ? Math.round(secs / 31536000).toLocaleString() + L(" سنة", " שנים") : L("مليارات السنين 🛡️", "מיליארדי שנים 🛡️");
+    const lv = [[L("ضعيفة جداً", "חלשה מאוד"), "#ef4444"], [L("ضعيفة جداً", "חלשה מאוד"), "#ef4444"], [L("ضعيفة", "חלשה"), "#f97316"], [L("متوسطة", "בינונית"), "#eab308"], [L("جيدة", "טובה"), "#84cc16"], [L("قوية", "חזקה"), "#22c55e"], [L("قوية جداً 🛡️", "חזקה מאוד 🛡️"), "#16a34a"]][score];
+    $("#mbar").style.width = (score / 6 * 100) + "%"; $("#mbar").style.background = lv[1];
+    $("#mlabel").textContent = p ? lv[0] : "—"; $("#mlabel").style.color = lv[1];
+    $("#crack").innerHTML = p ? `⏱️ ${L("حاسوب قوي (10 مليار محاولة بالثانية) يحتاج تقريباً:", "מחשב חזק (10 מיליארד ניסיונות בשנייה) צריך בערך:")} <b>${human}</b>` : "";
+    $("#checks").innerHTML = c.map(x => `<div class="${x[0] ? "y" : "n"}">${x[0] ? "✅" : "⬜"} ${x[1]}</div>`).join("");
+    if (score === 6) markAct(st, act.id);
+  };
+  inp.oninput = upd; upd();
+};
+
+// ================== المرحلة 3: عجلة قيصر ==================
+ACT.caesar = (box, st, act) => {
+  const A = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const enc = (t, k) => t.toUpperCase().replace(/[A-Z]/g, ch => A[(A.indexOf(ch) + k + 26) % 26]);
+  const ch = [{ c: "KHOOR", k: 3, a: "HELLO" }, { c: "FBEHU", k: 3, a: "CYBER" }, { c: enc("SAFE", 5), k: 5, a: "SAFE" }];
+  box.innerHTML = `<div class="grid2"><div class="card"><h3>🎡 ${L("عجلة قيصر", "גלגל קיסר")}</h3>
+      <div class="wheel"><div class="pointer"></div><div class="ring outer" id="ro"></div><div class="ring inner" id="ri"></div><div class="center" id="kc">3</div></div>
+      <div style="margin-top:14px">🔑 ${L("المفتاح (الإزاحة):", "המפתח (הזזה):")} <input type="range" id="k" min="0" max="25" value="3" style="width:55%"> <b id="kv">3</b></div>
+      <p class="muted" style="font-size:14px;margin:4px 0 0">${L("الحلقة الخارجية = النص الأصلي، الداخلية البنفسجية = النص المشفّر.", "הטבעת החיצונית = הטקסט המקורי, הפנימית הסגולה = הטקסט המוצפן.")}</p></div>
+    <div class="card"><h3>✍️ ${L("جرّب بنفسك", "נסו בעצמכם")}</h3>
+      <input id="pt" style="width:100%;direction:ltr" value="HELLO CLASS">
+      <div class="muted" style="margin:8px 0">${L("النص المشفّر:", "הטקסט המוצפן:")}</div><div class="cipherout" id="ct"></div>
+      <hr style="border-color:var(--line);margin:10px 0"><h3>🕵️ ${L("رسائل سرية — فكّ التشفير!", "הודעות סודיות — פענחו!")}</h3><div id="chal"></div></div></div>`;
+  const ro = $("#ro"), ri = $("#ri");
+  [...A].forEach((l, k) => { const ang = k / 26 * 360; ro.innerHTML += `<span style="transform:rotate(${ang}deg) translateY(-132px)">${l}</span>`; ri.innerHTML += `<span style="transform:rotate(${ang}deg) translateY(-90px);color:#c4b5fd">${l}</span>`; });
+  const upd = () => { const k = +$("#k").value; $("#kv").textContent = k; $("#kc").textContent = k; ri.style.transform = `rotate(${-k / 26 * 360}deg)`; $("#ct").textContent = enc($("#pt").value, k); };
+  $("#k").oninput = upd; $("#pt").oninput = upd; upd();
+  const drawCh = () => {
+    $("#chal").innerHTML = ch.map((c, n) => `<div class="mission row ${c.done ? "ok" : ""}" style="margin-bottom:6px;padding:6px 10px;gap:8px">
+      <span>${n + 1}.</span><code style="font-size:19px">${c.c}</code><span class="muted" style="font-size:14px">🔑 ${c.k}</span>
+      ${c.done ? `<span>✅ <b>${c.a}</b></span>` : `<input data-n="${n}" style="direction:ltr;width:110px;padding:5px 8px" placeholder="?"><button class="small" data-c="${n}">${L("تحقق", "בדיקה")}</button>`}</div>`).join("");
+    $$("[data-c]", box).forEach(b => b.onclick = () => {
+      const n = +b.dataset.c, v = $(`[data-n="${n}"]`, box).value.trim().toUpperCase();
+      if (v === ch[n].a) { ch[n].done = true; toast(L("🔓 فككت الرسالة!", "🔓 פענחתם!")); drawCh(); if (ch.every(c => c.done)) markAct(st, act.id); }
+      else toast(L(`❌ ليس بعد — حرّك العجلة إلى ${ch[n].k} واقرأ من الداخل للخارج`, `❌ עוד לא — סובבו את הגלגל ל-${ch[n].k} וקראו מבפנים החוצה`));
+    });
+  };
+  drawCh();
+};
+
+// ================== المرحلة 3: مختبر Pwned Passwords (API) ==================
+async function sha1Hex(str) {
+  try { if (crypto && crypto.subtle) { const b = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(str)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join("").toUpperCase(); } } catch (e) {}
+  return sha1js(str).toUpperCase();
+}
+function sha1js(msg) {
+  const rotl = (n, s) => (n << s) | (n >>> (32 - s));
+  const bytes = [...new TextEncoder().encode(msg)]; const ml = bytes.length * 8;
+  bytes.push(0x80); while (bytes.length % 64 !== 56) bytes.push(0);
+  for (let i = 7; i >= 0; i--) bytes.push(i > 3 ? 0 : (ml >>> (i * 8)) & 255);
+  let h0 = 0x67452301, h1 = 0xEFCDAB89, h2 = 0x98BADCFE, h3 = 0x10325476, h4 = 0xC3D2E1F0;
+  for (let c = 0; c < bytes.length; c += 64) {
+    const w = []; for (let i = 0; i < 16; i++) w[i] = (bytes[c + 4 * i] << 24) | (bytes[c + 4 * i + 1] << 16) | (bytes[c + 4 * i + 2] << 8) | bytes[c + 4 * i + 3];
+    for (let i = 16; i < 80; i++) w[i] = rotl(w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16], 1);
+    let [a, b, cc, d, e] = [h0, h1, h2, h3, h4];
+    for (let i = 0; i < 80; i++) {
+      const [f, k] = i < 20 ? [(b & cc) | (~b & d), 0x5A827999] : i < 40 ? [b ^ cc ^ d, 0x6ED9EBA1] : i < 60 ? [(b & cc) | (b & d) | (cc & d), 0x8F1BBCDC] : [b ^ cc ^ d, 0xCA62C1D6];
+      const t = (rotl(a, 5) + f + e + k + w[i]) | 0; e = d; d = cc; cc = rotl(b, 30); b = a; a = t;
+    }
+    h0 = (h0 + a) | 0; h1 = (h1 + b) | 0; h2 = (h2 + cc) | 0; h3 = (h3 + d) | 0; h4 = (h4 + e) | 0;
+  }
+  return [h0, h1, h2, h3, h4].map(x => (x >>> 0).toString(16).padStart(8, "0")).join("");
+}
+
+ACT.pwned = (box, st, act) => {
+  box.innerHTML = `<div class="card"><h3>🧪 ${L("مختبر التسريبات — Pwned Passwords API", "מעבדת הדליפות — Pwned Passwords API")}</h3>
+    <p class="muted" style="margin:0 0 6px">${L("فحص <b>حقيقي</b> مقابل أكثر من 800 مليون كلمة سر سُرّبت. ⚠️ جرّب كلمات مثل <code>123456</code> — وليس كلمة سرك الحقيقية.", "בדיקה <b>אמיתית</b> מול יותר מ-800 מיליון סיסמאות שדלפו. ⚠️ נסו מילים כמו <code>123456</code> — לא את הסיסמה האמיתית.")}</p>
+    <div class="row"><input id="pp" style="flex:1;min-width:180px;direction:ltr;font-size:18px;padding:7px 12px" placeholder="password" autocomplete="off"><button id="go">🔍 ${L("افحص", "בדיקה")}</button>
+    ${["123456", "password", "ahmad2008", "Falafel-Is-Life-2026!"].map(x => `<button class="ghost small" data-q="${x}">${x}</button>`).join("")}</div>
+    <div class="steps" style="margin-top:16px">
+      <div class="step" id="s1"><span class="n">1</span><b>${L("بصمة SHA-1 (في جهازك فقط)", "Hash מסוג SHA-1 (רק אצלכם)")}</b><div id="h1"></div></div>
+      <div class="step" id="s2"><span class="n">2</span><b>${L("قصّ: 5 أحرف تُرسل، الباقي سرّي", "חיתוך: 5 תווים נשלחים, השאר סודי")}</b><div id="h2"></div></div>
+      <div class="step" id="s3"><span class="n">3</span><b>${L("طلب API — 5 أحرف فقط", "בקשת API — רק 5 תווים")}</b><div id="h3"></div></div>
+      <div class="step" id="s4"><span class="n">4</span><b>${L("نبحث عن الـ Suffix في جهازك", "מחפשים את ה-Suffix אצלכם")}</b><div id="h4"></div></div>
+      <div class="step" id="s5"><span class="n">5</span><b>${L("النتيجة", "התוצאה")}</b><div id="h5"></div></div>
+    </div></div>`;
+  let busy = false;
+  const run = async () => {
+    const p = $("#pp").value; if (!p) return; if (busy) return; busy = true;
+    $$(".step", box).forEach(s => s.classList.remove("on")); ["h1", "h2", "h3", "h4", "h5"].forEach(id => $("#" + id).innerHTML = "");
+    const H = await sha1Hex(p); const pre = H.slice(0, 5), suf = H.slice(5);
+    $("#s1").classList.add("on");
+    const hv = document.createElement("div"); hv.className = "hashview"; $("#h1").appendChild(hv);
+    for (let k = 1; k <= 40; k++) { hv.textContent = H.slice(0, k) + "▌"; await sleep(25); }
+    hv.textContent = H; hv.title = L("40 حرفاً دائماً، مهما كان طول كلمة السر.", "תמיד 40 תווים, בלי קשר לאורך הסיסמה."); hv.insertAdjacentHTML("beforeend", ` <small class="muted">(40)</small>`);
+    await sleep(500); $("#s2").classList.add("on");
+    $("#h2").innerHTML = `<div class="hashview"><span class="pre">${pre}</span> ✂️ <span class="suf">${suf}</span></div>`;
+    await sleep(800); $("#s3").classList.add("on");
+    const url = "https://api.pwnedpasswords.com/range/" + pre;
+    $("#h3").innerHTML = `<div class="netlog">GET ${url}</div><div class="muted" id="wait">⏳</div>`;
+    let text = null, demo = false;
+    try { const r = await fetch(url); if (!r.ok) throw 0; text = await r.text(); } catch (e) { demo = true; }
+    if (demo) {
+      $("#wait").innerHTML = `⚠️ ${L("لا يوجد اتصال بالـ API هنا — نعرض <b>مثالاً تجريبياً</b>. في الموقع المرفوع (GitHub Pages) يعمل الـ API الحقيقي.", "אין חיבור ל-API כאן — מוצגת <b>דוגמה</b>. באתר המפורסם (GitHub Pages) ה-API האמיתי עובד.")}`;
+      const fake = Array.from({ length: 40 }, () => [...Array(35)].map(() => "0123456789ABCDEF"[Math.random() * 16 | 0]).join("") + ":" + (1 + Math.random() * 50 | 0));
+      if (["123456", "password", "ahmad2008"].includes(p)) fake.splice(17, 0, suf + ":" + ({ "123456": 209972844, password: 52256179, ahmad2008: 31 })[p]);
+      text = fake.join("\n");
+    } else $("#wait").innerHTML = `✅ HTTP 200 — <b>${text.trim().split("\n").length}</b> ${L("بصمة تبدأ بـ", "תוצאות שמתחילות ב-")} ${pre}. ${L("الخادم <b>لا يعرف</b> أي واحدة تخصّك! هذه K-Anonymity.", "השרת <b>לא יודע</b> מה שלכם! זו K-Anonymity.")}`;
+    await sleep(900); $("#s4").classList.add("on");
+    const lines = text.trim().split(/\r?\n/); const hitIdx = lines.findIndex(l => l.split(":")[0] === suf);
+    const lst = document.createElement("div"); lst.className = "hashlist";
+    lst.innerHTML = lines.slice(0, Math.max(60, hitIdx + 5)).map((l, k) => `<div class="${k === hitIdx ? "hit" : ""}">${esc(l)}</div>`).join("") + (lines.length > 60 ? `<div>… (${lines.length})</div>` : "");
+    $("#h4").appendChild(lst); if (hitIdx >= 0) setTimeout(() => { lst.scrollTop = lst.children[hitIdx].offsetTop - 60; }, 300);
+    await sleep(900); $("#s5").classList.add("on");
+    if (hitIdx >= 0) { const cnt = +lines[hitIdx].split(":")[1]; $("#h5").innerHTML = `<div class="feedback bad" style="font-size:20px">🚨 ${L("هذه الكلمة ظهرت في التسريبات", "הסיסמה הופיעה בדליפות")} <b>${cnt.toLocaleString("en")}</b> ${L("مرة! لا تستعملها أبداً.", "פעמים! אל תשתמשו בה לעולם.")}</div>`; }
+    else $("#h5").innerHTML = `<div class="feedback good" style="font-size:20px">✅ ${L("لم تظهر في التسريبات المعروفة.", "לא הופיעה בדליפות ידועות.")}</div>`;
+    $("#h5").insertAdjacentHTML("beforeend", `<p class="muted">${demo ? L("🧪 بيانات تجريبية", "🧪 נתוני דוגמה") : "🌐 api.pwnedpasswords.com"}</p>`);
+    markAct(st, act.id); busy = false;
+  };
+  $("#go").onclick = run; $("#pp").onkeydown = e => e.key === "Enter" && run();
+  $$("[data-q]", box).forEach(b => b.onclick = () => { $("#pp").value = b.dataset.q; run(); });
+};
+
+// ================== المرحلة 4: محقق IP + كرة أرضية (API) ==================
+let MY = null, GLOBE = null, MAP2D = null, MAPLAYER = null;
+const isIP = s => /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.test(s) && s.split(".").every(n => +n <= 255);
+const isPrivate = ip => /^10\./.test(ip) || /^192\.168\./.test(ip) || /^172\.(1[6-9]|2\d|3[01])\./.test(ip) || /^127\./.test(ip);
+async function resolveA(name) {
+  const j = await (await fetch(`https://dns.google/resolve?name=${encodeURIComponent(name)}&type=A`)).json();
+  if (j.Status !== 0 || !j.Answer) throw new Error("NX");
+  return j.Answer.filter(a => a.type === 1).map(a => a.data)[0];
+}
+async function geoIP(ip) {
+  const tries = [
+    async () => { const j = await (await fetch("https://ipwho.is/" + (ip || ""))).json(); if (!j.success) throw 0; return { ip: j.ip, country: j.country, cc: j.country_code, city: j.city, lat: j.latitude, lon: j.longitude, isp: j.connection && j.connection.isp, org: j.connection && j.connection.org, asn: j.connection && j.connection.asn ? "AS" + j.connection.asn : "", src: "ipwho.is" }; },
+    async () => { const j = await (await fetch("https://ipapi.co/" + (ip ? ip + "/" : "") + "json/")).json(); if (j.error) throw 0; return { ip: j.ip, country: j.country_name, cc: j.country_code, city: j.city, lat: j.latitude, lon: j.longitude, isp: j.org, org: j.org, asn: j.asn, src: "ipapi.co" }; },
+    async () => { if (location.protocol === "https:") throw 0; const j = await (await fetch("http://ip-api.com/json/" + (ip || "") + "?fields=status,country,countryCode,city,lat,lon,isp,org,as,query")).json(); if (j.status !== "success") throw 0; return { ip: j.query, country: j.country, cc: j.countryCode, city: j.city, lat: j.lat, lon: j.lon, isp: j.isp, org: j.org, asn: (j.as || "").split(" ")[0], src: "ip-api.com" }; }
+  ];
+  for (const t of tries) { try { return await t(); } catch (e) {} }
+  throw new Error("offline");
+}
+const DEMO_GEO = {
+  me: { ip: "79.180.12.34", country: "Israel", cc: "IL", city: "Tel Aviv", lat: 32.08, lon: 34.78, isp: "Bezeq International", org: "Bezeq", asn: "AS8551", src: "demo" },
+  "8.8.8.8": { ip: "8.8.8.8", country: "United States", cc: "US", city: "Mountain View", lat: 37.39, lon: -122.08, isp: "Google LLC", org: "Google Public DNS", asn: "AS15169", src: "demo" },
+  "1.1.1.1": { ip: "1.1.1.1", country: "Australia", cc: "AU", city: "Sydney", lat: -33.87, lon: 151.2, isp: "Cloudflare", org: "Cloudflare", asn: "AS13335", src: "demo" }
+};
+const DEMO_DNS = { "google.com": "142.250.75.14", "gov.il": "147.237.0.71", "instagram.com": "157.240.0.174" };
+const DEMO_GEO_BY = { "142.250.75.14": { country: "United States", cc: "US", city: "Mountain View", lat: 37.4, lon: -122.08, isp: "Google LLC", asn: "AS15169" }, "147.237.0.71": { country: "Israel", cc: "IL", city: "Jerusalem", lat: 31.77, lon: 35.21, isp: "Israel Government", asn: "AS16199" }, "157.240.0.174": { country: "Ireland", cc: "IE", city: "Dublin", lat: 53.35, lon: -6.26, isp: "Meta Platforms", asn: "AS32934" } };
+
+ACT.iplookup = (box, st, act) => {
+  let count = +(sessionStorage.getItem("ipcount") || 0), sawPrivate = !!sessionStorage.getItem("sawpriv");
+  box.innerHTML = `<div class="grid2"><div class="card">
+      <h3 title="${L("سنسأل خدمات API مجانية حقيقية: أين الخادم؟ من يملكه؟", "נשאל שירותי API חינמיים: איפה השרת? למי הוא שייך?")}">🗺️ ${L("محقق الـ IP — أين الخادم؟ من يملكه؟", "חוקר ה-IP — איפה השרת? למי הוא שייך?")}</h3>
+      <div class="row"><input id="ipq" style="flex:1;direction:ltr" placeholder="8.8.8.8 / gov.il"><button id="ipgo">🔎</button></div>
+      <div class="row" style="margin-top:8px">${["google.com", "gov.il", "8.8.8.8", "1.1.1.1", "instagram.com", "192.168.1.10"].map(x => `<button class="ghost small" data-q="${x}">${x}</button>`).join("")}</div>
+      <div id="myip" class="muted" style="margin-top:6px;font-size:14px">⏳</div>
+      <div id="ipres" style="margin-top:6px"></div>
+      <div class="hint">🎯 ${L("المهمة: ابحث عن 3 عناوين على الأقل، وواحد منها داخلي (192.168.1.10).", "המשימה: חפשו לפחות 3 כתובות, ואחת מהן פרטית (192.168.1.10).")} (<span id="ipc">${Math.min(count, 3)}</span>/3)</div>
+    </div>
+    <div class="card"><div class="row" style="justify-content:space-between"><h3>🌍 ${L("مسار الحزمة", "מסלול החבילה")}</h3><button class="ghost small" id="tog">🗺️ 2D</button></div>
+      <div id="globe"></div><div id="map2d" style="display:none"></div>
+      <p class="muted" style="font-size:14px">${L("الخط المتحرك = حزمة تسافر من عنوانك إلى الخادم.", "הקו הנע = חבילה שנוסעת מהכתובת שלכם לשרת.")}</p></div></div>`;
+  let mode = "3d", target = null;
+  const webgl = (() => { try { const c = document.createElement("canvas"); return !!(c.getContext("webgl") || c.getContext("experimental-webgl")); } catch (e) { return false; } })();
+  const fallback2d = () => { mode = "2d"; $("#tog").style.display = "none"; $("#globe").style.display = "none"; $("#map2d").style.display = "block"; initMap(); };
+  const initGlobe = () => {
+    const el = $("#globe"); if (!el) return;
+    if (typeof Globe === "undefined" || !webgl) return fallback2d();
+    try {
+      GLOBE = Globe()(el).globeImageUrl("https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg").backgroundColor("#000")
+        .width(el.clientWidth).height(420).pointAltitude(0.02).pointRadius(0.6).pointColor("c").pointLabel("l")
+        .arcColor(() => ["#38bdf8", "#facc15"]).arcDashLength(0.4).arcDashGap(0.2).arcDashAnimateTime(1600).arcStroke(0.8)
+        .labelText("l").labelSize(1.4).labelColor(() => "#fff").labelDotRadius(0.4);
+      GLOBE.controls().autoRotate = true; GLOBE.controls().autoRotateSpeed = 0.6;
+    } catch (e) { fallback2d(); }
+  };
+  const initMap = () => {
+    if (!window.L || !window.L.map) { drawSvgMap(); return; }
+    try {
+      if (MAP2D) { MAP2D.remove(); MAP2D = null; }
+      MAP2D = window.L.map("map2d").setView([30, 20], 2);
+      window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(MAP2D);
+      MAPLAYER = window.L.layerGroup().addTo(MAP2D);
+    } catch (e) { drawSvgMap(); }
+  };
+  // خريطة بسيطة بدون إنترنت (احتياط)
+  const drawSvgMap = () => {
+    MAP2D = null; const pts = [MY, target].filter(p => p && p.lat != null);
+    const X = lon => (lon + 180) / 360 * 800, Y = lat => (90 - lat) / 180 * 400;
+    let g = ""; for (let lo = -180; lo <= 180; lo += 30) g += `<line x1="${X(lo)}" y1="0" x2="${X(lo)}" y2="400" stroke="#1e293b"/>`; for (let la = -60; la <= 60; la += 30) g += `<line x1="0" y1="${Y(la)}" x2="800" y2="${Y(la)}" stroke="#1e293b"/>`;
+    let arc = ""; if (pts.length === 2) { const [a, b] = pts; const mx = (X(a.lon) + X(b.lon)) / 2, my = Math.min(Y(a.lat), Y(b.lat)) - 70; arc = `<path d="M${X(a.lon)},${Y(a.lat)} Q${mx},${my} ${X(b.lon)},${Y(b.lat)}" stroke="#38bdf8" stroke-width="3" fill="none" stroke-dasharray="10 8"><animate attributeName="stroke-dashoffset" from="200" to="0" dur="2s" repeatCount="indefinite"/></path>`; }
+    $("#map2d").innerHTML = `<svg viewBox="0 0 800 400" style="width:100%;height:100%;background:#020617">${g}${arc}${pts.map((p, k) => `<circle cx="${X(p.lon)}" cy="${Y(p.lat)}" r="8" fill="${k === 0 && pts.length > 1 ? "#22c55e" : "#ef4444"}"/><text x="${X(p.lon) + 10}" y="${Y(p.lat) - 10}" fill="#fff" font-size="14">${esc(p.city || p.ip)}</text>`).join("")}</svg>`;
+  };
+  const drawRoute = () => {
+    if (!target || target.lat == null) return;
+    const pts = [target]; if (MY && MY.lat != null) pts.unshift(MY);
+    if (mode === "3d" && GLOBE) {
+      GLOBE.controls().autoRotate = false;
+      GLOBE.pointsData(pts.map((p, k) => ({ lat: p.lat, lng: p.lon, c: k === 0 && pts.length > 1 ? "#22c55e" : "#ef4444", l: p.ip })))
+        .labelsData(pts.map((p, k) => ({ lat: p.lat, lng: p.lon, l: (k === 0 && pts.length > 1 ? "📍 " : "") + (p.city || p.country || "") })));
+      if (pts.length > 1) GLOBE.arcsData([{ startLat: MY.lat, startLng: MY.lon, endLat: target.lat, endLng: target.lon }]);
+      GLOBE.pointOfView({ lat: (pts[0].lat + target.lat) / 2, lng: (pts[0].lon + target.lon) / 2, altitude: 2.2 }, 1500);
+    } else if (MAP2D && MAPLAYER) {
+      MAPLAYER.clearLayers(); const ll = pts.map(p => [p.lat, p.lon]);
+      pts.forEach((p, k) => window.L.circleMarker([p.lat, p.lon], { radius: 8, color: k === 0 && pts.length > 1 ? "#22c55e" : "#ef4444" }).bindTooltip(p.ip + " · " + (p.city || "")).addTo(MAPLAYER));
+      if (ll.length > 1) { window.L.polyline(ll, { color: "#38bdf8", dashArray: "8 8", weight: 3 }).addTo(MAPLAYER); MAP2D.fitBounds(ll, { padding: [40, 40] }); } else MAP2D.setView(ll[0], 4);
+    } else drawSvgMap();
+  };
+  $("#tog").onclick = () => {
+    mode = mode === "3d" ? "2d" : "3d"; $("#tog").textContent = mode === "3d" ? "🗺️ 2D" : "🌍 3D";
+    $("#globe").style.display = mode === "3d" ? "block" : "none"; $("#map2d").style.display = mode === "2d" ? "block" : "none";
+    if (mode === "2d") { if (!MAP2D) initMap(); setTimeout(() => { MAP2D && MAP2D.invalidateSize(); drawRoute(); }, 50); } else drawRoute();
+  };
+  const octets = ip => `<div class="octets">${ip.split(".").map(n => `<div>${n}<small>${(+n).toString(2).padStart(8, "0")}</small></div>`).join('<div style="border:none;background:none">.</div>')}</div>`;
+  const search = async () => {
+    const q = $("#ipq").value.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, ""); if (!q) return;
+    const res = $("#ipres"); res.innerHTML = `<div class="muted">⏳</div>`;
+    let ip = q, dnsNote = "";
+    if (!isIP(q)) {
+      if (/^\d+\.\d+\.\d+\.\d+$/.test(q)) { res.innerHTML = `<div class="feedback bad">❌ ${L("عنوان غير صالح! كل رقم بين 0 و-255.", "כתובת לא תקינה! כל מספר בין 0 ל-255.")}</div>`; return; }
+      try { ip = await resolveA(q); } catch (e) { ip = DEMO_DNS[q.replace(/^www\./, "")]; if (!ip) { res.innerHTML = `<div class="feedback bad">❌ ${L("لم نجد هذا الاسم في DNS.", "השם לא נמצא ב-DNS.")}</div>`; return; } }
+      dnsNote = `<div class="netlog">DNS: ${esc(q)} → ${ip}</div>`;
+    }
+    if (isPrivate(ip)) {
+      sawPrivate = true; sessionStorage.setItem("sawpriv", 1);
+      res.innerHTML = `<div class="feedback good"><b>🏠 ${L("هذا عنوان داخلي (כתובת פרטית)", "זו כתובת פרטית")}</b>${octets(ip)}<p>${L("لا يمكن تحديد موقعه في العالم، لأنه موجود فقط داخل شبكة بيت أو مدرسة. آلاف البيوت تستعمل نفس العنوان! الراوتر يترجمه لعنوان عام واحد (NAT).", "אי אפשר לאתר אותה בעולם, כי היא קיימת רק בתוך רשת של בית או בית ספר. אלפי בתים משתמשים באותה כתובת! הנתב מתרגם אותה לכתובת ציבורית אחת (NAT).")}</p></div>`;
+    } else {
+      let g; try { g = await geoIP(ip); } catch (e) { g = DEMO_GEO[ip] || Object.assign({ ip, src: "demo", org: "" }, DEMO_GEO_BY[ip] || DEMO_GEO["8.8.8.8"], { ip }); }
+      target = g;
+      res.innerHTML = `${dnsNote}<div class="card" style="background:var(--card2);padding:10px 12px"><div class="row" style="justify-content:space-between"><b style="font-size:19px;direction:ltr">${g.ip}</b><span class="tagp" style="background:#052e16;color:#86efac">🌐 ${L("عنوان عام", "כתובת ציבורית")}</span></div>
+        ${octets(g.ip)}<div class="infogrid four" style="margin-top:6px"><b>${L("الدولة", "מדינה")}</b><span>${esc(g.country || "-")} ${g.cc ? `(${g.cc})` : ""}</span><b>${L("المدينة", "עיר")}</b><span>${esc(g.city || "-")}</span>
+        <b>ISP</b><span class="ltr">${esc(g.isp || "-")}</span><b>ASN</b><span class="ltr">${esc(g.asn || "-")}</span><b>Subnet</b><span class="mono">${g.ip.split(".").slice(0, 3).join(".")}.0/24</span><b>Gateway</b><span class="mono">192.168.1.1</span></div>
+        <div class="muted" style="font-size:13px;margin-top:6px">${g.src === "demo" ? L("🧪 بيانات تجريبية (لا يوجد اتصال بالـ API هنا)", "🧪 נתוני דוגמה (אין חיבור ל-API כאן)") : "🌐 API: " + g.src}</div></div>`;
+      drawRoute();
+    }
+    count++; sessionStorage.setItem("ipcount", count); $("#ipc").textContent = Math.min(count, 3);
+    if (count >= 3 && sawPrivate) markAct(st, act.id);
+  };
+  $("#ipgo").onclick = search; $("#ipq").onkeydown = e => e.key === "Enter" && search();
+  $$("[data-q]", box).forEach(b => b.onclick = () => { $("#ipq").value = b.dataset.q; search(); });
+  setTimeout(initGlobe, 30);
+  (async () => { try { MY = await geoIP(""); } catch (e) { MY = DEMO_GEO.me; }
+    $("#myip") && ($("#myip").innerHTML = `📍 ${L("عنوانك العام:", "הכתובת הציבורית שלכם:")} <code>${MY.ip}</code> — ${esc(MY.city || "")} ${MY.src === "demo" ? "(demo)" : ""}`); })();
+  cleanupActivity = () => { if (GLOBE) { try { GLOBE.pauseAnimation(); GLOBE._destructor && GLOBE._destructor(); } catch (e) {} GLOBE = null; } if (MAP2D) { try { MAP2D.remove(); } catch (e) {} MAP2D = null; } };
+};
+
+// ================== المرحلة 4: محاكي ACL ==================
+const HOSTS = { "192.168.1.10": { n: B("طالبة PC1", "תלמידה PC1"), i: "👩‍🎓" }, "192.168.1.20": { n: B("معلم PC2", "מורה PC2"), i: "👨‍🏫" }, "10.0.0.66": { n: B("هاكر", "האקר"), i: "🦹" } };
+const SERVICES = { 80: "HTTP 🌐", 443: "HTTPS 🔒", 22: "SSH 🖥️", 23: "Telnet ⚠️" };
+const ACL_MISSIONS = [
+  { t: B("🦹 الهاكر (10.0.0.66) يحاول الدخول! أضف قاعدة تمنعه — والباقون يستمرون بالعمل.", "🦹 ההאקר (10.0.0.66) מנסה להיכנס! הוסיפו חוק שחוסם אותו — והשאר ממשיכים לעבוד."),
+    hint: B("أضف deny للعنوان 10.0.0.66 وضعها <b>فوق</b> permit any (استعمل ⬆️).", "הוסיפו deny לכתובת 10.0.0.66 ושימו אותו <b>מעל</b> permit any (עם ⬆️)."),
+    start: [{ act: "permit", src: "any", port: "any" }],
+    tests: [{ src: "10.0.0.66", port: 80, ex: "deny" }, { src: "10.0.0.66", port: 22, ex: "deny" }, { src: "192.168.1.10", port: 80, ex: "permit" }, { src: "192.168.1.20", port: 443, ex: "permit" }] },
+  { t: B("🌐 الجميع مسموح لهم تصفح المواقع فقط (80 و-443). Telnet (23) ممنوع لأنه غير مشفّر.", "🌐 כולם מורשים רק לגלוש (80 ו-443). Telnet (23) חסום כי הוא לא מוצפן."),
+    hint: B("قاعدتان permit: للمنفذ 80 وللمنفذ 443. الباقي يُمنع تلقائياً بـ Implicit Deny!", "שני חוקי permit: לפורט 80 ולפורט 443. השאר נחסם אוטומטית ב-Implicit Deny!"),
+    start: [],
+    tests: [{ src: "192.168.1.10", port: 80, ex: "permit" }, { src: "192.168.1.20", port: 443, ex: "permit" }, { src: "192.168.1.10", port: 23, ex: "deny" }, { src: "10.0.0.66", port: 23, ex: "deny" }] },
+  { t: B("🖥️ تحدي الترتيب: المعلم (192.168.1.20) فقط يستطيع SSH (22). الجميع ممنوعون من SSH. والجميع مسموح لهم HTTP (80).", "🖥️ אתגר הסדר: רק המורה (192.168.1.20) יכול SSH (22). כל השאר חסומים ל-SSH. וכולם מורשים HTTP (80)."),
+    hint: B("1) permit المعلم 22  2) deny الكل 22  3) permit الكل 80.", "1) permit למורה 22  2) deny לכולם 22  3) permit לכולם 80."),
+    start: [{ act: "deny", src: "any", port: "22" }],
+    tests: [{ src: "192.168.1.20", port: 22, ex: "permit" }, { src: "192.168.1.10", port: 22, ex: "deny" }, { src: "10.0.0.66", port: 22, ex: "deny" }, { src: "192.168.1.10", port: 80, ex: "permit" }, { src: "10.0.0.66", port: 80, ex: "permit" }] }
+];
+ACT.acl = (box, st, act) => {
+  let done0 = +(sessionStorage.getItem("aclprog") || 0);
+  let mi = Math.min(done0, ACL_MISSIONS.length - 1), rules = JSON.parse(JSON.stringify(ACL_MISSIONS[mi].start)), animating = false, raf = null, alive = true;
+  box.innerHTML = `<div class="card"><div id="missions"></div>
+    <div class="aclgrid"><div>
+      <canvas id="aclCanvas" width="900" height="270"></canvas>
+      <div class="row" style="margin-top:6px;gap:6px;font-size:15px">📦 <select id="psrc">${Object.entries(HOSTS).map(([ip, h]) => `<option value="${ip}">${h.i} ${T(h.n)} (${ip})</option>`).join("")}</select>
+      → <select id="pport">${Object.entries(SERVICES).map(([p, n]) => `<option value="${p}">${p} — ${n}</option>`).join("")}</select>
+      <button id="send" class="small">🚀 ${L("أرسل", "שלחו")}</button></div></div>
+    <div><div class="row" style="justify-content:space-between;margin-bottom:6px"><b>📜 ACL 101 <span class="muted" style="font-size:13px">(${L("تُقرأ من الأعلى", "נקרא מלמעלה")} ↓)</span></b><button class="ghost small" id="add">➕ ${L("أضف قاعدة", "הוסיפו חוק")}</button></div>
+    <div class="rules" id="rules"></div></div></div></div>`;
+  const cv = $("#aclCanvas"), cx = cv.getContext("2d");
+  const cli = r => `access-list 101 ${r.act} tcp ${r.src === "any" ? "any" : "host " + r.src} any${r.port === "any" ? "" : " eq " + r.port}`;
+  const drawRules = (hi = -1, cls = "") => {
+    if (!$("#rules")) return;
+    $("#rules").innerHTML = rules.map((r, k) => `<div class="rule ${k === hi ? cls : ""}" data-i="${k}"><span class="num">${(k + 1) * 10}</span>
+      <select data-f="act"><option value="permit" ${r.act === "permit" ? "selected" : ""}>✅ permit</option><option value="deny" ${r.act === "deny" ? "selected" : ""}>⛔ deny</option></select>
+      <select data-f="src"><option value="any">any</option>${Object.entries(HOSTS).map(([ip, h]) => `<option value="${ip}" ${r.src === ip ? "selected" : ""}>${h.i} ${ip}</option>`).join("")}</select>
+      <select data-f="port"><option value="any">any port</option>${Object.keys(SERVICES).map(p => `<option value="${p}" ${r.port == p ? "selected" : ""}>port ${p}</option>`).join("")}</select>
+      <button class="ghost small" data-m="up">⬆️</button><button class="ghost small" data-m="dn">⬇️</button><button class="ghost small" data-m="del">🗑️</button>
+      <div class="cli">${cli(r)}</div></div>`).join("") +
+      `<div class="rule implicit ${hi === rules.length ? "match-d" : ""}"><span class="num">∞</span><b>⛔ deny any any</b><span class="muted" style="font-size:14px">— Implicit Deny</span></div>`;
+    $$("#rules .rule[data-i]").forEach(row => {
+      const k = +row.dataset.i;
+      $$("select", row).forEach(s => s.onchange = () => { rules[k][s.dataset.f] = s.value; drawRules(); });
+      $$("[data-m]", row).forEach(b => b.onclick = () => {
+        if (animating) return; const m = b.dataset.m;
+        if (m === "del") rules.splice(k, 1);
+        if (m === "up" && k > 0) [rules[k - 1], rules[k]] = [rules[k], rules[k - 1]];
+        if (m === "dn" && k < rules.length - 1) [rules[k + 1], rules[k]] = [rules[k], rules[k + 1]];
+        drawRules();
+      });
+    });
+  };
+  const match = p => { for (let k = 0; k < rules.length; k++) { const r = rules[k]; if ((r.src === "any" || r.src === p.src) && (r.port === "any" || +r.port === +p.port)) return k; } return -1; };
+  const W = 900, Hh = 270, Y = 150, RX = 450;
+  let pk = null, msg = null, parts = [];
+  const node = (x, emoji, label, sub, col) => {
+    cx.fillStyle = col; cx.beginPath(); if (cx.roundRect) cx.roundRect(x - 50, Y - 45, 100, 90, 16); else cx.rect(x - 50, Y - 45, 100, 90); cx.fill();
+    cx.font = "40px serif"; cx.textAlign = "center"; cx.fillText(emoji, x, Y + 12);
+    cx.fillStyle = "#e8eefc"; cx.font = "bold 16px Cairo, Heebo, sans-serif"; cx.fillText(label, x, Y + 70);
+    cx.fillStyle = "#94a3b8"; cx.font = "13px monospace"; cx.fillText(sub, x, Y + 88);
+  };
+  const draw = () => {
+    if (!alive) return;
+    cx.clearRect(0, 0, W, Hh); cx.direction = "ltr";
+    cx.strokeStyle = "#475569"; cx.lineWidth = 5; cx.beginPath(); cx.moveTo(100, Y); cx.lineTo(800, Y); cx.stroke();
+    const sip = pk ? pk.src : ($("#psrc") ? $("#psrc").value : "192.168.1.10"), h = HOSTS[sip];
+    node(90, h.i, T(h.n), sip, "#0c4a6e");
+    cx.fillStyle = "#9f1239"; cx.beginPath(); cx.arc(RX, Y, 44, 0, 7); cx.fill();
+    cx.font = "34px serif"; cx.textAlign = "center"; cx.fillText("🛡️", RX, Y + 12);
+    cx.fillStyle = "#e8eefc"; cx.font = "bold 16px Cairo, sans-serif"; cx.fillText("R1 + ACL", RX, Y + 70);
+    node(810, "🗄️", L("خادم المدرسة", "שרת בית הספר"), "10.1.1.5", "#14532d");
+    if (pk) {
+      cx.beginPath(); cx.arc(pk.x, Y, 15, 0, 7); cx.fillStyle = pk.col; cx.fill(); cx.strokeStyle = "#fff"; cx.lineWidth = 2; cx.stroke();
+      if (pk.hdr) {
+        cx.fillStyle = "rgba(10,16,32,.95)"; cx.strokeStyle = "#facc15"; cx.lineWidth = 2;
+        cx.beginPath(); cx.rect(RX - 150, 10, 300, 62); cx.fill(); cx.stroke();
+        cx.fillStyle = "#facc15"; cx.font = "bold 14px monospace"; cx.textAlign = "center";
+        cx.fillText("HEADER 📦", RX, 30); cx.fillStyle = "#e8eefc"; cx.fillText(`Src: ${pk.src}  →  Dst Port: ${pk.port}`, RX, 55);
+      }
+    }
+    parts.forEach(p => { cx.fillStyle = `rgba(239,68,68,${p.l})`; cx.beginPath(); cx.arc(p.x, p.y, p.r, 0, 7); cx.fill(); });
+    if (msg) { cx.font = "bold 20px Cairo, Heebo, sans-serif"; cx.textAlign = "center"; cx.fillStyle = msg.c; cx.fillText(msg.t, msg.x, 105); }
+  };
+  const tween = (from, to, ms) => new Promise(res => { const t0 = performance.now(); const f = now => { if (!alive) return res(); const p = Math.min(1, (now - t0) / ms); pk.x = from + (to - from) * p; draw(); if (p < 1) raf = requestAnimationFrame(f); else res(); }; raf = requestAnimationFrame(f); });
+  const send = async (p, speed = 1) => {
+    animating = true; msg = null; parts = []; pk = { ...p, x: 130, col: "#38bdf8", hdr: false };
+    await tween(130, RX - 50, 1100 / speed);
+    pk.hdr = true; draw(); await sleep(500 / speed);
+    const k = match(p), lastIdx = k === -1 ? rules.length : k;
+    for (let j = 0; j <= lastIdx; j++) { const last = j === lastIdx; drawRules(j, last ? ((k === -1 || rules[k].act === "deny") ? "match-d" : "match-p") : "check"); await sleep((last ? 600 : 350) / speed); }
+    const ok = k !== -1 && rules[k].act === "permit";
+    if (ok) { pk.col = "#22c55e"; pk.hdr = false; msg = { t: `✅ permit — ${(k + 1) * 10}`, c: "#22c55e", x: 640 }; await tween(RX - 50, 760, 900 / speed); msg = { t: L("✅ وصلت للخادم!", "✅ הגיעה לשרת!"), c: "#22c55e", x: 640 }; draw(); }
+    else {
+      pk.col = "#ef4444"; pk.hdr = false; msg = { t: k === -1 ? "⛔ Implicit Deny" : `⛔ deny — ${(k + 1) * 10}`, c: "#ef4444", x: RX };
+      parts = Array.from({ length: 40 }, () => ({ x: RX - 50, y: Y, vx: -3 + Math.random() * 6, vy: -3 + Math.random() * 6, r: 2 + Math.random() * 5, l: 1 }));
+      for (let f = 0; f < 30 && alive; f++) { parts.forEach(q => { q.x += q.vx; q.y += q.vy; q.l *= .93; }); draw(); await sleep(16); }
+      pk.x = -100; draw();
+    }
+    await sleep(500 / speed); drawRules(); animating = false;
+    return ok ? "permit" : "deny";
+  };
+  const drawMissions = results => {
+    const done = +(sessionStorage.getItem("aclprog") || 0); if (!$("#missions")) return;
+    const m = ACL_MISSIONS[mi], fails = results ? results.filter(r => !r.ok) : [];
+    $("#missions").innerHTML = `<div class="mission aclmis ${mi < done ? "ok" : ""}"><div class="mchips">${ACL_MISSIONS.map((x, k) => `<button class="ghost small ${k === mi ? "sel" : ""}" ${k <= done ? `data-goto="${k}"` : "disabled"}>${k + 1}${k < done ? "✅" : k === mi ? "" : "🔒"}</button>`).join("")}</div>
+      <div style="flex:1;min-width:250px">${T(m.t)}${done >= ACL_MISSIONS.length && !results ? ` <b style="color:var(--green)">🏆 ${L("أنهيت كل المهمات!", "סיימתם את כל המשימות!")}</b>` : ""}
+      ${results ? `<div class="testres"><span style="letter-spacing:3px">${results.map(r => r.ok ? "✅" : "❌").join("")}</span> ${fails.map(r => `· ${HOSTS[r.src].i}${r.src}→${r.port}: ${L("المطلوب", "נדרש")} <b>${r.ex}</b>`).join(" ")}</div>` : ""}<div id="hintbox"></div></div>
+      <div class="row" style="gap:6px"><button class="small" id="test">🧪 ${L("اختبر", "בדיקה")}</button><button class="ghost small" id="hint">💡</button><button class="ghost small" id="reset" title="reset">↺</button></div></div>`;
+    $("#test") && ($("#test").onclick = runTests);
+    $("#hint") && ($("#hint").onclick = () => $("#hintbox").innerHTML = `<div style="color:#c4b5fd;font-size:15px">💡 ${T(ACL_MISSIONS[mi].hint)}</div>`);
+    $("#reset") && ($("#reset").onclick = () => { rules = JSON.parse(JSON.stringify(ACL_MISSIONS[mi].start)); drawRules(); drawMissions(); });
+    $$("[data-goto]").forEach(b => b.onclick = () => { mi = +b.dataset.goto; rules = JSON.parse(JSON.stringify(ACL_MISSIONS[mi].start)); drawRules(); drawMissions(); });
+  };
+  const runTests = async () => {
+    if (animating) return; const res = [];
+    for (const t of ACL_MISSIONS[mi].tests) { if (!alive) return; $("#psrc").value = t.src; $("#pport").value = t.port; const got = await send(t, 2.6); res.push({ ...t, got, ok: got === t.ex }); }
+    if (res.every(r => r.ok)) {
+      toast(L("🎉 المهمة نجحت!", "🎉 המשימה הצליחה!")); const done = Math.max(+(sessionStorage.getItem("aclprog") || 0), mi + 1); sessionStorage.setItem("aclprog", done);
+      if (done >= ACL_MISSIONS.length) markAct(st, act.id);
+      if (mi < ACL_MISSIONS.length - 1) { mi++; rules = JSON.parse(JSON.stringify(ACL_MISSIONS[mi].start)); drawRules(); drawMissions(); return; }
+    }
+    drawMissions(res);
+  };
+  $("#add").onclick = () => { if (!animating) { rules.push({ act: "deny", src: "any", port: "any" }); drawRules(); } };
+  $("#send").onclick = () => { if (!animating) send({ src: $("#psrc").value, port: +$("#pport").value }); };
+  $("#psrc").onchange = draw;
+  drawRules(); drawMissions(); draw();
+  cleanupActivity = () => { alive = false; cancelAnimationFrame(raf); };
+};
+
+// ================== المرحلة 5: مفكّك حزم DNS (API) ==================
+ACT.dns = (box, st, act) => {
+  const seen = new Set(JSON.parse(sessionStorage.getItem("dnsseen") || "[]"));
+  const TYPES = { 1: "A", 5: "CNAME", 28: "AAAA", 15: "MX", 2: "NS", 16: "TXT" };
+  box.innerHTML = `<div class="card"><div class="split"><div><h3>🧅 ${L("مفكّك حزم DNS — Google DNS API", "מפרק חבילות DNS — Google DNS API")}</h3>
+    <p class="muted" style="font-size:15px;margin:0 0 8px">${L("اكتب اسم موقع. نرسل سؤالاً حقيقياً لخادم Google DNS ونفكّك الجواب إلى طبقات OSI مثل Wireshark.", "כתבו שם אתר. נשלח שאילתה אמיתית ל-Google DNS ונפרק את התשובה לשכבות OSI כמו ב-Wireshark.")}</p>
+    <div class="row"><input id="dq" style="flex:1;direction:ltr" placeholder="gov.il"><button id="dgo">📨 ${L("أرسل", "שלח")}</button></div>
+    <div class="row" style="margin-top:8px">${["gov.il", "www.google.com", "www.instagram.com", "www.ynet.co.il", "not-a-real-site-xyz.com"].map(x => `<button class="ghost small" data-q="${x}">${x}</button>`).join("")}</div>
+    <div class="travel"><div>💻<span class="lab">PC</span></div><div>📡<span class="lab">Router</span></div><div>📒<span class="lab">8.8.8.8</span></div><div class="pk" id="pk" style="display:none"></div></div>
+    <div id="dqz"></div>
+    <div class="hint">🎯 ${L("المهمة: افحص موقعين مختلفين وأجب عن سؤال الفحص.", "המשימה: בדקו שני אתרים שונים וענו על שאלת הבדיקה.")} (<span id="dc">${Math.min(seen.size, 2)}</span>/2)</div></div>
+    <div id="dres"><div class="empty muted">📨 ${L("الجواب المفكك سيظهر هنا", "התשובה המפורקת תופיע כאן")}</div></div></div></div>`;
+  const anim = async () => { const p = $("#pk"); if (!p) return; p.style.display = "block"; p.style.left = "40px"; await sleep(30); p.style.left = "calc(100% - 70px)"; await sleep(1250); p.style.background = "#22c55e"; p.style.left = "40px"; await sleep(1250); p.style.display = "none"; p.style.background = ""; };
+  const DEMO = { "gov.il": [{ type: 1, TTL: 300, data: "147.237.0.71" }], "www.google.com": [{ type: 1, TTL: 300, data: "142.250.75.4" }], "www.instagram.com": [{ type: 5, TTL: 3600, data: "z-p42-instagram.c10r.instagram.com." }, { type: 1, TTL: 60, data: "157.240.0.174" }], "www.ynet.co.il": [{ type: 5, TTL: 300, data: "ynet.edgekey.net." }, { type: 1, TTL: 20, data: "23.40.62.99" }] };
+  const run = async () => {
+    const d = $("#dq").value.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, ""); if (!d) return;
+    $("#dres").innerHTML = `<div class="netlog">GET https://dns.google/resolve?name=${esc(d)}&type=A</div>`; $("#dqz").innerHTML = "";
+    let j, demo = false; const a = anim();
+    try { j = await (await fetch(`https://dns.google/resolve?name=${encodeURIComponent(d)}&type=A`)).json(); }
+    catch (e) { demo = true; const ans = DEMO[d] || (d.includes("not-a-real") ? null : [{ type: 1, TTL: 300, data: "93.184.216.34" }]); j = ans ? { Status: 0, Answer: ans.map(r => ({ name: d + ".", ...r })) } : { Status: 3 }; }
+    await a;
+    const srcPort = 49152 + Math.floor(Math.random() * 16000), ans = j.Answer || [];
+    const rows = ans.map(r => `<tr><td>${esc(r.name)}</td><td><b style="color:${r.type === 1 ? "#4ade80" : "#facc15"}">${TYPES[r.type] || r.type}</b></td><td>${r.TTL}s</td><td>${esc(r.data)}</td></tr>`).join("");
+    const Ly = (n, col, title, he, inner) => `<div class="layer" style="animation-delay:${(7 - n) * .12}s" title="Layer ${n} — ${title} · ${he}"><div class="lh" style="background:${col}"><span>${L("طبقة", "שכבה")} ${n} · <span class="ltr">${title.split(" — ")[1] || title}</span></span></div><div class="lb">${inner}</div></div>`;
+    $("#dres").innerHTML += `${j.Status === 3 ? `<div class="feedback bad">❌ NXDOMAIN (Status 3): ${L("هذا الاسم غير موجود في DNS — مثل رقم غير موجود في دفتر الهاتف.", "השם לא קיים ב-DNS — כמו מספר שלא קיים בספר הטלפונים.")}</div>` : ""}
+      <div class="layers">
+      ${Ly(7, "#6d28d9", "Application — DNS", "שכבת היישום", `Query: <b>${esc(d)}</b>  Type: A  (Status: ${j.Status} ${j.Status === 0 ? "NOERROR" : j.Status === 3 ? "NXDOMAIN" : ""})<br>Answers: ${ans.length}${ans.length ? `<table><tr><th>Name</th><th>Type</th><th>TTL</th><th>Data</th></tr>${rows}</table>` : ""}`)}
+      ${Ly(4, "#1d4ed8", "Transport — UDP", "שכבת התעבורה", `UDP<br>Src Port: ${srcPort}<br>Dst Port: <b>53</b>`)}
+      ${Ly(3, "#047857", "Network — IP", "שכבת הרשת", `Src: 192.168.1.10<br>Dst: <b>8.8.8.8</b><br>(Google DNS)`)}
+      ${Ly(2, "#92400e", "Data Link — Ethernet", "שכבת הקו", `Src: 3C:52:82:1A:9F:07<br>Dst: 00:1E:58:AA:01:01`)}
+      </div>
+      <p class="muted" style="font-size:13px;margin:6px 0 0" title="${L("الموقع سأل فعلياً عبر HTTPS (443، DoH)، لكن DNS التقليدي يعمل على UDP 53.", "האתר שאל בפועל דרך HTTPS (443, DoH), אבל DNS רגיל עובד ב-UDP 53.")}">${demo ? L("🧪 بيانات تجريبية", "🧪 נתוני דוגמה") : "🌐 dns.google"} · ${L("DNS التقليدي = UDP 53 (هنا عبر HTTPS)", "DNS רגיל = UDP 53 (כאן דרך HTTPS)")}</p>`;
+    if (ans.length) {
+      const first = ans[0];
+      $("#dqz").innerHTML = `<div class="mission"><b>❓ ${L("سؤال فحص:", "שאלת בדיקה:")}</b> ${L("ما نوع السجل الأول، وكم ثانية يُحفظ (TTL)؟", "מה סוג הרשומה הראשונה, וכמה שניות היא נשמרת (TTL)?")}
+        <div class="row" style="margin-top:8px"><select id="qt"><option value="">Type…</option><option>A</option><option>CNAME</option><option>AAAA</option></select>
+        <input id="qtl" style="width:110px;direction:ltr" placeholder="TTL"><button class="small" id="qchk">${L("تحقق", "בדיקה")}</button></div><div id="qfb"></div></div>`;
+      $("#qchk").onclick = () => {
+        const ok = $("#qt").value === (TYPES[first.type] || "") && +$("#qtl").value === first.TTL;
+        $("#qfb").innerHTML = ok ? `<div class="feedback good">✅ ${L("ممتاز!", "מצוין!")} ${first.type === 5 ? L("هذا الموقع يستخدم CNAME — اسم مستعار، ثم سجل A يعطي الـ IP.", "האתר משתמש ב-CNAME — כינוי, ואחריו רשומת A עם ה-IP.") : ""}</div>` : `<div class="feedback bad">❌ ${L("انظر في Layer 7: العمود Type والعمود TTL في السطر الأول.", "הסתכלו ב-Layer 7: העמודות Type ו-TTL בשורה הראשונה.")}</div>`;
+        if (ok) { seen.add(d); sessionStorage.setItem("dnsseen", JSON.stringify([...seen])); $("#dc").textContent = Math.min(seen.size, 2); if (seen.size >= 2) markAct(st, act.id); }
+      };
+    }
+  };
+  $("#dgo").onclick = run; $("#dq").onkeydown = e => e.key === "Enter" && run();
+  $$("[data-q]", box).forEach(b => b.onclick = () => { $("#dq").value = b.dataset.q; run(); });
+};
+
+// ================== المرحلة 5: غرفة الهروب — Port Security ==================
+ACT.switch = (box, st, act) => {
+  const ports = Array.from({ length: 8 }, (_, k) => ({ n: k + 1, dev: [1, 2, 4, 6].includes(k + 1) ? "💻" : null, shut: false, mode: "dynamic", ps: false, max: 1, viol: "shutdown" }));
+  ports[2].dev = "🦹";
+  let mode = "user", iface = null, mi = 0, t0 = Date.now(), timerId, hintsUsed = 0;
+  const M = [
+    { t: B("🚨 إنذار! مهاجم وصل حاسوبه في <b>المنفذ 3</b>. أغلق المنفذ 3 فوراً!", "🚨 אזעקה! תוקף חיבר מחשב ל<b>פורט 3</b>. סגרו את פורט 3 מיד!"), ok: () => ports[2].shut, hint: ["enable", "configure terminal", "interface fa0/3", "shutdown"], after: () => { ports[2].dev = "👩‍💼"; log("sys", L("[الحارس أخرج المهاجم، والموظفة سارة وصلت حاسوبها في المنفذ 3]", "[השומר הוציא את התוקף, והעובדת שרה חיברה מחשב לפורט 3]")); } },
+    { t: B("✅ تم إخراج المهاجم. الموظفة سارة تحتاج الإنترنت — <b>افتح المنفذ 3</b>.", "✅ התוקף הוצא. העובדת שרה צריכה אינטרנט — <b>פתחו את פורט 3</b>."), ok: () => !ports[2].shut, hint: ["interface fa0/3", "no shutdown"] },
+    { t: B("🔐 <b>المنفذ 5</b> فارغ وفي الممر — خطر! اجعله access وفعّل port-security.", "🔐 <b>פורט 5</b> פנוי ונמצא במסדרון — סכנה! הגדירו access והפעילו port-security."), ok: () => ports[4].mode === "access" && ports[4].ps, hint: ["interface fa0/5", "switchport mode access", "switchport port-security"] },
+    { t: B("🎯 أكمل حماية <b>المنفذ 5</b>: جهاز واحد فقط (maximum 1)، وعند المخالفة يُغلق (violation shutdown).", "🎯 השלימו את ההגנה על <b>פורט 5</b>: מכשיר אחד בלבד (maximum 1), ובהפרה — סגירה (violation shutdown)."), ok: () => ports[4].ps && ports[4].max === 1 && ports[4].setMax && ports[4].viol === "shutdown" && ports[4].setViol, hint: ["switchport port-security maximum 1", "switchport port-security violation shutdown"] }
+  ];
+  box.innerHTML = `<div class="card"><div class="escape-top"><h3 style="margin:0;flex:1">🔓 ${L("غرفة الهروب: المنفذ المتمرّد", "חדר בריחה: הפורט הסורר")}</h3><span class="clock" id="clk">00:00</span><button class="ghost small" id="hint">💡 ${L("تلميح", "רמז")}</button><button class="ghost small" id="cheat">📄 ${L("بطاقة الأوامر", "דף פקודות")}</button></div>
+    <div class="mission" id="mis"></div>
+    <div class="switchbox" style="margin-top:34px"><div class="lbl"><span>Cisco Catalyst 2960 — SW1</span><span>FastEthernet 0/1 – 0/8</span></div><div class="ports" id="ports"></div></div>
+    <div class="terminal" id="term" style="margin-top:12px"><div id="out"></div><div class="inrow"><span id="prompt">Switch&gt;</span><input id="cmd" autocomplete="off" spellcheck="false" autocapitalize="off"></div></div>
+    <div id="hb"></div></div>`;
+  const out = $("#out"), term = $("#term");
+  function log(cls, t) { out.insertAdjacentHTML("beforeend", `<div class="l ${cls}">${esc(t)}</div>`); term.scrollTop = term.scrollHeight; }
+  const prompt = () => ({ user: "Switch>", priv: "Switch#", conf: "Switch(config)#", if: "Switch(config-if)#" }[mode]);
+  const drawPorts = () => {
+    $("#ports").innerHTML = ports.map(p => `<div class="port ${p.shut ? "err" : p.dev ? "up" : ""} ${iface === p.n ? "focus" : ""}">${p.dev ? `<span class="dev">${p.dev}</span>` : ""}<span class="led"></span>${p.ps ? "🔒" : ""}<span>0/${p.n}</span></div>`).join("");
+    $("#prompt").textContent = prompt();
+  };
+  const drawMission = () => {
+    $("#mis").className = "mission" + (mi >= M.length ? " ok" : "");
+    $("#mis").innerHTML = mi >= M.length ? `🏆 <b>${L("هربت من الغرفة!", "ברחתם מהחדר!")}</b> ⏱️ ${$("#clk").textContent} · 💡 ${hintsUsed}` : `<b>${L("مهمة", "משימה")} ${mi + 1}/${M.length}:</b> ${T(M[mi].t)}`;
+  };
+  const check = () => {
+    if (mi < M.length && M[mi].ok()) {
+      M[mi].after && M[mi].after(); log("sys", `★ ${L("المهمة", "משימה")} ${mi + 1} ✔`); toast(`🔓 ${mi + 1} ✔`); mi++; drawMission(); drawPorts();
+      if (mi >= M.length) { clearInterval(timerId); confetti(); markAct(st, act.id); }
+    }
+  };
+  const ifaceRe = /^(?:f|fa|fas|fastethernet)\s*0\/([1-8])$/;
+  const Wd = (u, full, min = 2) => u && u.length >= min && full.startsWith(u);
+  const exec = raw => {
+    const line = raw.trim().replace(/\s+/g, " "); log("cmd", prompt() + " " + raw); if (!line) return;
+    const w = line.toLowerCase().split(" ");
+    if (line === "?") return log("", { user: "enable", priv: "configure terminal | show port-security | show interfaces status | disable", conf: "interface fa0/N | exit | end", if: "shutdown | no shutdown | switchport mode access | switchport port-security [maximum N | violation shutdown|restrict|protect] | exit | end" }[mode]);
+    if (mode === "user") { if (Wd(w[0], "enable") && w.length === 1) mode = "priv"; else log("err", "% Invalid input. → enable"); }
+    else if (mode === "priv") {
+      if (Wd(w[0], "configure") && Wd(w[1], "terminal", 1)) { mode = "conf"; log("", "Enter configuration commands, one per line.  End with CNTL/Z."); }
+      else if (Wd(w[0], "show") && Wd(w[1], "port-security", 4)) log("", "Port    Secure  MaxAddr  Violation\n" + ports.map(p => `Fa0/${p.n}   ${p.ps ? "Yes" : "No "}     ${p.ps ? p.max : "-"}        ${p.ps ? p.viol : "-"}`).join("\n"));
+      else if (Wd(w[0], "show") && Wd(w[1], "interfaces")) log("", "Port   Status        Mode\n" + ports.map(p => `Fa0/${p.n}  ${p.shut ? "disabled    " : p.dev ? "connected   " : "notconnect  "}  ${p.mode}`).join("\n"));
+      else if (Wd(w[0], "disable")) mode = "user";
+      else if (Wd(w[0], "configure")) log("err", "% Incomplete command. → configure terminal");
+      else log("err", "% Invalid input detected.");
+    } else {
+      if (Wd(w[0], "interface", 3)) { const m = w.slice(1).join("").match(ifaceRe); if (m) { iface = +m[1]; mode = "if"; } else log("err", "% Invalid interface → interface fa0/3"); }
+      else if (w[0] === "end") { mode = "priv"; iface = null; }
+      else if (Wd(w[0], "exit")) { if (mode === "if") { mode = "conf"; iface = null; } else mode = "priv"; }
+      else if (mode === "conf") log("err", "% Invalid input → interface fa0/N");
+      else {
+        const p = ports[iface - 1];
+        if (Wd(w[0], "shutdown", 4) && w.length === 1) { p.shut = true; log("sys", `%LINK-5-CHANGED: Interface FastEthernet0/${iface}, changed state to administratively down`); }
+        else if (w[0] === "no" && Wd(w[1], "shutdown", 4)) { p.shut = false; log("sys", `%LINK-3-UPDOWN: Interface FastEthernet0/${iface}, changed state to ${p.dev ? "up" : "down"}`); }
+        else if (Wd(w[0], "switchport") && Wd(w[1], "mode") && Wd(w[2], "access")) p.mode = "access";
+        else if (Wd(w[0], "switchport") && Wd(w[1], "port-security", 4)) {
+          if (w.length === 2) { if (p.mode !== "access") log("err", `Command rejected: FastEthernet0/${iface} is a dynamic port. → switchport mode access`); else p.ps = true; }
+          else if (Wd(w[2], "maximum", 3) && /^\d+$/.test(w[3] || "")) { p.max = +w[3]; p.setMax = true; }
+          else if (Wd(w[2], "violation", 3) && ["shutdown", "restrict", "protect"].some(x => Wd(w[3], x, 3))) { p.viol = ["shutdown", "restrict", "protect"].find(x => Wd(w[3], x, 3)); p.setViol = true; }
+          else log("err", "% Incomplete command.");
+        } else log("err", "% Invalid input detected at '^' marker.");
+      }
+    }
+    drawPorts(); check();
+  };
+  log("sys", "SW1 con0 is now available. ? = help");
+  drawPorts(); drawMission();
+  $("#cmd").onkeydown = e => { if (e.key === "Enter") { exec(e.target.value); e.target.value = ""; } };
+  term.onclick = () => $("#cmd").focus();
+  $("#hint").onclick = () => { if (mi >= M.length) return; hintsUsed++; $("#hb").innerHTML = `<div class="hint">💡 <code>${prompt()}</code> → ${M[mi].hint.map(h => `<code>${h}</code>`).join(" → ")}</div>`; };
+  $("#cheat").onclick = () => modal(`<h3>📄 Cisco CLI</h3><table class="t">${[["enable", L("Switch> ← Switch#", "Switch> ← Switch#")], ["configure terminal", L("وضع الإعدادات", "מצב הגדרות")], ["interface fa0/3", L("اختيار منفذ", "בחירת פורט")], ["shutdown", L("إغلاق المنفذ", "סגירת פורט")], ["no shutdown", L("فتح المنفذ", "פתיחת פורט")], ["switchport mode access", L("منفذ لجهاز عادي", "פורט למחשב רגיל")], ["switchport port-security", L("تفعيل الحماية", "הפעלת הגנה")], ["... maximum 1", L("جهاز واحد فقط", "מכשיר אחד בלבד")], ["... violation shutdown", L("إغلاق عند المخالفة", "סגירה בהפרה")], ["exit / end", L("رجوع", "חזרה")]].map(([c, d]) => `<tr><td><code>${c}</code></td><td>${d}</td></tr>`).join("")}</table><button onclick="closeModal()">OK</button>`);
+  timerId = setInterval(() => { const s = Math.floor((Date.now() - t0) / 1000); $("#clk") && ($("#clk").textContent = String(s / 60 | 0).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0")); }, 1000);
+  cleanupActivity = () => clearInterval(timerId);
+};
+
+</script>
+  <script>
+// =====================================================
+//  الاختبار النهائي — ثنائي اللغة
+// =====================================================
+function renderFinal(main) {
+  const s = me();
+  main.innerHTML = `<div class="stagehead"><div class="ic">🏆</div><div style="flex:1"><h1 style="margin:0">${L("الاختبار النهائي", "המבחן המסכם")}</h1></div>
+    <button class="ghost" onclick="go('home')">${L("→ الخريطة", "→ למפה")}</button></div>
+    <div class="card"><h3>📋 ${L("مبنى الاختبار", "מבנה המבחן")}</h3>
+      <table class="t"><tr><th></th><th></th><th>⭐</th></tr>
+      <tr><td>${L("أ", "א")}</td><td>${L("15 سؤالاً بأسلوب البجروت — تُختار <b>عشوائياً</b> من 30 (كل محاولة مختلفة)", "15 שאלות בסגנון בגרות — נבחרות <b>באקראי</b> מתוך 30 (כל ניסיון שונה)")}</td><td>60</td></tr>
+      <tr><td>${L("ب", "ב")}</td><td>${L("مهمة عملية: رتّب قواعد ACL بالسحب واختر مكانها في الراوتر", "משימה מעשית: גררו חוקי ACL לסדר הנכון ובחרו איפה למקם אותם")}</td><td>20</td></tr>
+      <tr><td>${L("ج", "ג")}</td><td>${L("طابق المصطلح مع معناه", "התאימו מושג להגדרה")}</td><td>20</td></tr></table>
+      <p>${L("علامة النجاح:", "ציון עובר:")} <b>${PASS_FINAL}</b> 🎓 ${s.final ? `· ${L("أفضل علامة:", "הציון הכי גבוה:")} <b>${s.final.best}</b>` : ""}</p>
+      <button id="startF" style="font-size:20px">🚀 ${L("ابدأ الاختبار", "התחלת המבחן")}</button> ${s.final && s.final.passed ? `<button class="ghost" id="cert">🎓 ${L("شهادتي", "התעודה שלי")}</button>` : ""}</div>`;
+  $("#startF").onclick = () => startFinal(main);
+  $("#cert") && ($("#cert").onclick = () => showCert(main));
+}
+
+function startFinal(main) {
+  const res = { mcq: 0, t1: 0, t2: 0 };
+  const qs = shuffle(FINAL_BANK).slice(0, 15).map(q => ({ ...q, explain: "" }));
+  main.innerHTML = `<h2>${L("الجزء أ: أسئلة اختيار متعدد (60)", "חלק א: שאלות אמריקאיות (60)")}</h2><div id="fbody"></div>`;
+  renderQuiz($("#fbody"), qs, null, { next: (right, n) => { res.mcq = Math.round(right / n * 60); finalTask1(main, res); } });
+}
+
+function finalTask1(main, res) {
+  const cards = shuffle([{ id: "A", t: "deny tcp host 10.0.0.66 any" }, { id: "B", t: "permit tcp any any eq 80" }, { id: "C", t: "permit tcp any any" }, { id: "D", t: "deny tcp any any eq 80" }]);
+  main.innerHTML = `<h2>${L("الجزء ب: مهمة ACL عملية (20)", "חלק ב: משימת ACL מעשית (20)")}</h2>
+    <div class="card"><div class="scenario">🏫 ${L("خادم المدرسة داخل الشبكة. الطلبات تصل من الإنترنت عبر <code>G0/0</code>.<br>المطلوب: <b>امنع</b> الهاكر <code>10.0.0.66</code> من كل شيء، و<b>اسمح</b> للآخرين بـ HTTP (80) <b>فقط</b>.",
+                                          "שרת בית הספר נמצא ברשת הפנימית. הבקשות מגיעות מהאינטרנט דרך <code>G0/0</code>.<br>נדרש: <b>לחסום</b> את ההאקר <code>10.0.0.66</code> מהכול, <b>ולאפשר</b> לכל השאר HTTP (80) <b>בלבד</b>.")}</div>
+      <div style="direction:ltr;text-align:center;font-size:24px;margin:10px 0">🌍 Internet ── <b style="color:var(--yellow)">G0/0</b> [🛡️ R1] <b style="color:var(--yellow)">G0/1</b> ── 🗄️ Server</div>
+      <div class="grid2"><div><h3>1️⃣ ${L("القواعد المتاحة (اسحب أو اضغط)", "חוקים זמינים (גררו או לחצו)")}</h3><div class="dropzone" id="pool"></div></div>
+        <div><h3>2️⃣ ACL 101 ↓</h3><div class="dropzone" id="acl" style="min-height:140px"></div><div class="muted" style="font-size:14px">${L("اضغط على قاعدة لإرجاعها. الترتيب مهم!", "לחיצה על חוק מחזירה אותו. הסדר חשוב!")}</div></div></div>
+      <h3 style="margin-top:16px">3️⃣ ${L("أين نضع الـ ACL؟", "איפה מחילים את ה-ACL?")}</h3>
+      <div class="options" id="place">${shuffle([["g00in", "G0/0 in", L("الحزم الداخلة من الإنترنت", "חבילות שנכנסות מהאינטרנט")], ["g01in", "G0/1 in", L("الحزم الداخلة من الخادم", "חבילות שנכנסות מהשרת")], ["g00out", "G0/0 out", L("الحزم الخارجة للإنترنت", "חבילות שיוצאות לאינטרנט")]]).map(([v, c, t]) => `<button class="opt" data-p="${v}"><span class="mono">${c}</span> — ${t}</button>`).join("")}</div>
+      <br><button id="sub1" style="font-size:19px">✔ ${L("سلّم المهمة", "הגשת המשימה")}</button></div>`;
+  let placed = [], place = null;
+  const draw = () => {
+    $("#pool").innerHTML = cards.filter(c => !placed.includes(c.id)).map(c => `<div class="dcard" draggable="true" data-id="${c.id}">${c.t}</div>`).join("") || `<div class="muted">—</div>`;
+    $("#acl").innerHTML = placed.map((id, k) => `<div class="dcard" data-id="${id}" data-in="1"><b style="color:var(--muted)">${(k + 1) * 10}</b>  access-list 101 ${cards.find(c => c.id === id).t}</div>`).join("") + `<div class="dcard" style="opacity:.5;cursor:default">(implicit) deny any any</div>`;
+    $$(".dcard[data-id]").forEach(d => {
+      d.onclick = () => { const id = d.dataset.id; if (d.dataset.in) placed = placed.filter(x => x !== id); else placed.push(id); draw(); };
+      d.ondragstart = e => e.dataTransfer.setData("text", d.dataset.id);
+    });
+  };
+  const z = $("#acl");
+  z.ondragover = e => { e.preventDefault(); z.classList.add("over"); };
+  z.ondragleave = () => z.classList.remove("over");
+  z.ondrop = e => { e.preventDefault(); z.classList.remove("over"); const id = e.dataTransfer.getData("text"); if (id && !placed.includes(id)) { placed.push(id); draw(); } };
+  $$("#place .opt").forEach(b => b.onclick = () => { place = b.dataset.p; $$("#place .opt").forEach(x => x.classList.toggle("right", x === b)); });
+  draw();
+  $("#sub1").onclick = () => {
+    if (!placed.length || !place) return toast(L("رتّب القواعد واختر المكان أولاً", "סדרו חוקים ובחרו מיקום קודם"));
+    let pts = 0;
+    if (placed.join("") === "AB") pts += 14; else if (placed.includes("A") && placed.includes("B") && placed.length === 2) pts += 7; else if (placed[0] === "A") pts += 4;
+    if (place === "g00in") pts += 6;
+    res.t1 = pts;
+    main.insertAdjacentHTML("beforeend", `<div class="card feedback ${pts >= 14 ? "good" : "bad"}" style="margin-top:14px"><b>${pts}/20</b><br>
+      ${L("الحل:", "הפתרון:")} <code>10 deny tcp host 10.0.0.66 any</code> → <code>20 permit tcp any any eq 80</code>. ${L("الـ deny يجب أن يكون <b>أولاً</b>، وإلا يمرّ الهاكر عبر permit eq 80! المكان: <code>G0/0 in</code> — أقرب ما يمكن لمصدر الخطر.", "ה-deny חייב להיות <b>ראשון</b>, אחרת ההאקר יעבור דרך permit eq 80! המיקום: <code>G0/0 in</code> — הכי קרוב למקור הסכנה.")}<br><br><button id="n2">${L("إلى الجزء ج ←", "לחלק ג ←")}</button></div>`);
+    $("#sub1").disabled = true; $("#n2").onclick = () => finalTask2(main, res); $("#n2").scrollIntoView({ behavior: "smooth" });
+  };
+}
+
+function finalTask2(main, res) {
+  const terms = shuffle(MATCH_PAIRS.map((p, k) => ({ ...p, k }))), defs = shuffle(MATCH_PAIRS.map((p, k) => ({ ...p, k })));
+  let sel = null, okCount = 0; const missed = new Set(), done = new Set();
+  main.innerHTML = `<h2>${L("الجزء ج: طابق المصطلح مع معناه (20)", "חלק ג: התאימו מושג להגדרה (20)")}</h2>
+    <div class="card"><p class="muted">${L("اضغط على مصطلح، ثم على المعنى المناسب.", "לחצו על מושג, ואז על ההגדרה המתאימה.")}</p>
+    <div class="matchgrid"><div id="mt" style="display:grid;gap:10px"></div><div id="md" style="display:grid;gap:10px"></div></div><div id="m2"></div></div>`;
+  const draw = () => {
+    $("#mt").innerHTML = terms.map(t => `<div class="mterm ${done.has(t.k) ? "ok" : ""} ${sel === t.k ? "sel" : ""}" data-k="${t.k}" style="font-weight:800;font-size:20px">${t.he}</div>`).join("");
+    $("#md").innerHTML = defs.map(d => `<div class="mdef ${done.has(d.k) ? "ok" : ""}" data-k="${d.k}">${T(d.def)}</div>`).join("");
+    $$(".mterm").forEach(e => e.onclick = () => { if (!done.has(+e.dataset.k)) { sel = +e.dataset.k; draw(); } });
+    $$(".mdef").forEach(e => e.onclick = () => {
+      const k = +e.dataset.k; if (sel == null || done.has(k)) return;
+      if (k === sel) { done.add(k); if (!missed.has(k)) okCount++; sel = null; draw(); if (done.size === MATCH_PAIRS.length) finish(); }
+      else { missed.add(sel); e.classList.add("bad"); setTimeout(() => e.classList.remove("bad"), 400); toast(L("❌ حاول مرة أخرى", "❌ נסו שוב")); }
+    });
+  };
+  const finish = () => {
+    res.t2 = Math.round(okCount / MATCH_PAIRS.length * 20);
+    $("#m2").innerHTML = `<div class="feedback good" style="margin-top:12px">${okCount}/${MATCH_PAIRS.length} → <b>${res.t2}/20</b><br><br><button id="fin">🏁 ${L("النتيجة النهائية", "התוצאה הסופית")}</button></div>`;
+    $("#fin").onclick = () => finalResult(main, res);
+  };
+  draw();
+}
+
+function finalResult(main, res) {
+  const s = me(); const score = res.mcq + res.t1 + res.t2, passed = score >= PASS_FINAL;
+  const prev = s.final || {};
+  s.final = { score, best: Math.max(score, prev.best || 0), passed: passed || !!prev.passed, date: passed ? Date.now() : (prev.date || Date.now()), parts: res, attempts: (prev.attempts || 0) + 1, rewarded: prev.rewarded };
+  if (passed && !s.final.rewarded) { s.final.rewarded = true; s.points += 100; }
+  save(); renderTop(); if (passed) confetti();
+  main.innerHTML = `<div class="card result"><div style="font-size:80px">${passed ? "🏆" : "💪"}</div><div class="score" style="color:${passed ? "var(--green)" : "var(--orange)"}">${score}</div>
+    <table class="t" style="max-width:420px;margin:10px auto"><tr><td>${L("أ — أسئلة", "א — שאלות")}</td><td>${res.mcq}/60</td></tr><tr><td>${L("ب — ACL", "ב — ACL")}</td><td>${res.t1}/20</td></tr><tr><td>${L("ج — مصطلحات", "ג — מושגים")}</td><td>${res.t2}/20</td></tr></table>
+    <p style="font-size:20px">${passed ? L(`مبروك يا ${esc(DB.current)}! نجحت 🎉`, `כל הכבוד ${esc(DB.current)}! עברת 🎉`) : L(`تحتاج ${PASS_FINAL} للنجاح. كل محاولة فيها أسئلة جديدة — حاول مرة أخرى!`, `צריך ${PASS_FINAL} כדי לעבור. בכל ניסיון שאלות חדשות — נסו שוב!`)}</p>
+    <div class="row" style="justify-content:center">${passed ? `<button class="green" id="cert">🎓 ${L("شهادتي", "התעודה שלי")}</button>` : ""}<button id="again">↻ ${L("محاولة جديدة", "ניסיון חדש")}</button><button class="ghost" onclick="go('home')">${L("الخريطة", "למפה")}</button></div></div>`;
+  $("#again").onclick = () => startFinal(main);
+  $("#cert") && ($("#cert").onclick = () => showCert(main));
+}
+
+function showCert(main) {
+  const s = me();
+  main.innerHTML = `<div class="cert"><div style="font-size:60px">🛡️</div><h1>${L("شهادة إنجاز", "תעודת הצטיינות")}</h1><div style="font-size:22px">${L("أمن المعلومات — אבטחת מידע", "אבטחת מידע — أمن المعلومات")}</div>
+    <p style="font-size:20px">${L("نشهد أن الطالب/ة", "מוענקת ל")}</p><div class="nm">${esc(DB.current)}</div>
+    <p style="font-size:20px">${L("أنهى/ت بنجاح جميع مراحل لومدة أمن المعلومات<br>وحصل/ت في الاختبار النهائي على", "על סיום כל שלבי לומדת אבטחת המידע<br>וציון במבחן המסכם:")} <b>${s.final.best}</b></p>
+    <div style="font-size:34px">${STAGES.map(st => st.badge.icon).join(" ")} 🏆</div>
+    <p>⭐ ${s.points} · ${new Date(s.final.date).toLocaleDateString(DB.lang === "he" ? "he-IL" : "ar")}</p></div>
+    <div class="row noprint" style="justify-content:center;margin-top:16px"><button onclick="try{print()}catch(e){}">🖨️ ${L("طباعة / PDF", "הדפסה / PDF")}</button><button class="ghost" onclick="go('home')">${L("الخريطة", "למפה")}</button></div>`;
+}
+
+</script>
+</body>
+</html>
